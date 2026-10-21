@@ -174,35 +174,101 @@ async def analyze_document_with_ai(doc: DocumentExtractionResult) -> NoticeAnaly
         # Ollama offline -> fallback safely
         return heuristic_extract_facets(doc)
 
-    # If Ollama is reachable, query structured extraction
+    # If Ollama is reachable, query structured extraction with Gemma 2
     try:
         combined_text = "\n\n".join(
-            [f"--- Page {p.page_number} ---\n{p.text}" for p in doc.pages[:10]]
+            [f"--- Page {p.page_number} ---\n{p.text}" for p in doc.pages[:6]]
         )
         prompt = (
-            f"Analyze this official notice. Return JSON with dates, eligibility, documents, actions.\n\n"
+            "You are NoticeNap, an air-gapped bureaucratic notice analysis engine.\n"
+            "Analyze the following notice text and extract 4 structured facets as JSON strictly matching this schema:\n"
+            "{\n"
+            '  "summary": "1-2 sentence executive summary of the notice",\n'
+            '  "dates": [{"title": "Short title", "date_str": "Date or deadline", "is_deadline": true, "source_page": 1}],\n'
+            '  "eligibility": [{"category": "Age limit/Degree/etc", "requirement": "Detailed rule", "is_strict": true, "source_page": 1}],\n'
+            '  "documents": [{"name": "Document name", "specification": "Size or format details", "is_mandatory": true, "source_page": 1}],\n'
+            '  "actions": [{"step_number": 1, "title": "Action title", "description": "What to do next", "source_page": 1}]\n'
+            "}\n"
+            "Include exact source_page numbers (1-indexed) based on the page headers. Return valid JSON only.\n\n"
             f"{combined_text}"
         )
         
-        async with httpx.AsyncClient(timeout=15.0) as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(
                 f"{host}/api/generate",
                 json={
                     "model": model,
                     "prompt": prompt,
                     "stream": False,
-                    "format": "json"
+                    "format": "json",
+                    "options": {
+                        "temperature": 0.1,
+                        "num_predict": 1024
+                    }
                 }
             )
             if resp.status_code == 200:
                 raw_response = resp.json().get("response", "{}")
                 parsed = json.loads(raw_response)
-                # If valid JSON matches expected structure, format into NoticeAnalysisResult
-                # Otherwise fallback to heuristic
-                if "dates" in parsed or "eligibility" in parsed:
-                    # Construct and return
-                    pass
+                
+                # Validate and parse facets
+                dates = [
+                    NoticeDate(
+                        title=d.get("title", "Date"),
+                        date_str=d.get("date_str", ""),
+                        is_deadline=bool(d.get("is_deadline", False)),
+                        source_page=int(d.get("source_page", 1)),
+                        context=d.get("title", "")
+                    )
+                    for d in parsed.get("dates", [])
+                ]
+                
+                eligibility = [
+                    EligibilityItem(
+                        category=e.get("category", "General"),
+                        requirement=e.get("requirement", ""),
+                        is_strict=bool(e.get("is_strict", True)),
+                        source_page=int(e.get("source_page", 1))
+                    )
+                    for e in parsed.get("eligibility", [])
+                ]
+                
+                documents = [
+                    RequiredDocument(
+                        name=doc_item.get("name", "Document"),
+                        specification=doc_item.get("specification", doc_item.get("name", "")),
+                        is_mandatory=bool(doc_item.get("is_mandatory", True)),
+                        source_page=int(doc_item.get("source_page", 1))
+                    )
+                    for doc_item in parsed.get("documents", [])
+                ]
+                
+                actions = [
+                    ActionStep(
+                        step_number=idx + 1,
+                        title=a.get("title", f"Step {idx + 1}"),
+                        description=a.get("description", a.get("title", "")),
+                        source_page=int(a.get("source_page", 1)),
+                        completed=False
+                    )
+                    for idx, a in enumerate(parsed.get("actions", []))
+                ]
+                
+                if dates or eligibility or documents or actions:
+                    return NoticeAnalysisResult(
+                        document_id=doc.document_id,
+                        filename=doc.filename,
+                        summary=parsed.get("summary", f"Extracted via Ollama Gemma 2 with {doc.page_count} pages."),
+                        dates=dates,
+                        eligibility=eligibility,
+                        documents=documents,
+                        actions=actions,
+                        ai_engine=f"ollama-gemma2 ({model})",
+                        generated_at="2026-10-21"
+                    )
     except Exception:
+        # On any parsing or model timeout, safely fallback to deterministic extraction
         pass
 
     return heuristic_extract_facets(doc)
+
