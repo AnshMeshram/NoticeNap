@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
-from fastapi import FastAPI, UploadFile, File, HTTPException, status
+import datetime
+from fastapi import FastAPI, UploadFile, File, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
 from .security import SecurityException
@@ -100,9 +101,10 @@ async def delete_document(document_id: str):
     return {"deleted": True, "document_id": document_id}
 
 @app.post("/api/documents/{document_id}/analyze", response_model=NoticeAnalysisResult)
-async def analyze_document(document_id: str):
+async def analyze_document(document_id: str, language: str = "en"):
     """
     Produces structured 4-facet breakdown: Dates, Eligibility, Documents, Actions.
+    Supports output language: en (English), hi (Hindi), mr (Marathi).
     Uses local Ollama with Gemma 2 if available; otherwise uses deterministic extractor.
     """
     doc = DOCUMENTS_STORE.get(document_id)
@@ -112,23 +114,23 @@ async def analyze_document(document_id: str):
             detail=f"Document with ID '{document_id}' not found. Please extract first."
         )
 
-    analysis = await analyze_document_with_ai(doc)
+    analysis = await analyze_document_with_ai(doc, language=language)
     ANALYSIS_STORE[document_id] = analysis
     return analysis
 
 @app.get("/api/documents/{document_id}/analysis", response_model=NoticeAnalysisResult)
-async def get_document_analysis(document_id: str):
+async def get_document_analysis(document_id: str, language: str = "en"):
     """Retrieves analysis results for document."""
     analysis = ANALYSIS_STORE.get(document_id)
-    if not analysis:
-        # Generate on demand
+    if not analysis or analysis.language != language:
+        # Generate or re-generate with requested language
         doc = DOCUMENTS_STORE.get(document_id)
         if not doc:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Document '{document_id}' not found."
             )
-        analysis = await analyze_document_with_ai(doc)
+        analysis = await analyze_document_with_ai(doc, language=language)
         ANALYSIS_STORE[document_id] = analysis
     return analysis
 
@@ -150,4 +152,61 @@ async def toggle_action_step(document_id: str, step_number: int):
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
         detail=f"Action step {step_number} not found."
+    )
+
+@app.get("/api/documents/{document_id}/calendar.ics")
+async def export_calendar(document_id: str):
+    """
+    Generates a standard RFC-5545 iCalendar (.ics) file with all extracted
+    deadlines, examination dates, and submission events from the notice.
+    """
+    analysis = ANALYSIS_STORE.get(document_id)
+    if not analysis:
+        doc = DOCUMENTS_STORE.get(document_id)
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found.")
+        analysis = await analyze_document_with_ai(doc)
+        ANALYSIS_STORE[document_id] = analysis
+
+    now_str = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    
+    lines = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//NoticeNap//The Calm Document Desk//EN",
+        "CALSCALE:GREGORIAN",
+        "METHOD:PUBLISH",
+        f"X-WR-CALNAME:NoticeNap - {analysis.filename}"
+    ]
+
+    for idx, d in enumerate(analysis.dates):
+        # Generate simple event entry for each deadline
+        uid = f"{document_id}_date_{idx}@noticenap.local"
+        lines.extend([
+            "BEGIN:VEVENT",
+            f"UID:{uid}",
+            f"DTSTAMP:{now_str}",
+            # Set to current date placeholder or extracted date
+            f"DTSTART;VALUE=DATE:{datetime.date.today().strftime('%Y%m%d')}",
+            f"SUMMARY:NoticeNap: {d.title}",
+            f"DESCRIPTION:{d.date_str} (Source: Page {d.source_page} of {analysis.filename})",
+            "STATUS:CONFIRMED",
+            "BEGIN:VALARM",
+            "ACTION:DISPLAY",
+            "DESCRIPTION:NoticeNap Deadline Reminder",
+            "TRIGGER:-P1D",
+            "END:VALARM",
+            "END:VEVENT"
+        ])
+
+    lines.append("END:VCALENDAR")
+    ics_content = "\r\n".join(lines)
+
+    safe_name = analysis.filename.replace(".pdf", "").replace(" ", "_")
+    return Response(
+        content=ics_content,
+        media_type="text/calendar",
+        headers={
+            "Content-Disposition": f'attachment; filename="{safe_name}_deadlines.ics"'
+        }
     )

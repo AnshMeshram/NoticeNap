@@ -20,6 +20,7 @@ class DocumentExtractionResult(BaseModel):
     total_words: int
     pages: List[ExtractedPage]
     is_encrypted: bool = False
+    is_scanned: bool = False
     security_warnings: List[str] = Field(default_factory=list)
 
 def extract_pdf_pages(file_bytes: bytes, raw_filename: str) -> DocumentExtractionResult:
@@ -87,6 +88,12 @@ def extract_pdf_pages(file_bytes: bytes, raw_filename: str) -> DocumentExtractio
                 )
             )
 
+        is_scanned = (len(doc) > 0 and total_words < 10)
+        if is_scanned:
+            warnings.append(
+                "Scanned notice detected: No selectable text layer found in PDF. Scanned PDFs require an OCR preprocessing step."
+            )
+
         return DocumentExtractionResult(
             document_id=doc_id,
             filename=safe_filename,
@@ -96,6 +103,7 @@ def extract_pdf_pages(file_bytes: bytes, raw_filename: str) -> DocumentExtractio
             total_words=total_words,
             pages=pages,
             is_encrypted=False,
+            is_scanned=is_scanned,
             security_warnings=warnings
         )
     finally:

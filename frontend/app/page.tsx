@@ -19,6 +19,7 @@ interface DocumentExtractionResult {
   total_words: number;
   pages: ExtractedPage[];
   is_encrypted: boolean;
+  is_scanned?: boolean;
   security_warnings?: string[];
 }
 
@@ -56,11 +57,15 @@ interface ActionStep {
 interface NoticeAnalysisResult {
   document_id: string;
   filename: string;
+  purpose: string;
   summary: string;
+  application_fee?: string;
+  uncertainties: string[];
   dates: NoticeDate[];
   eligibility: EligibilityItem[];
   documents: RequiredDocument[];
   actions: ActionStep[];
+  language: string;
   ai_engine: string;
   generated_at: string;
 }
@@ -84,6 +89,7 @@ export default function Home() {
   const [filterAction, setFilterAction] = useState<"all" | "pending" | "completed">("all");
   const [searchLibrary, setSearchLibrary] = useState("");
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<"en" | "hi" | "mr">("en");
 
   // Core Data Stores
   const [documentResult, setDocumentResult] = useState<DocumentExtractionResult | null>(null);
@@ -100,6 +106,7 @@ export default function Home() {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
   const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   // Check Ollama system connectivity
@@ -150,6 +157,39 @@ export default function Home() {
     };
   }, [checkStatus, loadLibrary]);
 
+  const runAnalysis = async (docId: string, lang: "en" | "hi" | "mr") => {
+    setLoading(true);
+    setLoadingMessage(
+      lang === "hi"
+        ? "Gemma 2 से हिंदी में विश्लेषण किया जा रहा है..."
+        : lang === "mr"
+        ? "Gemma 2 द्वारे मराठीत विश्लेषण सुरू आहे..."
+        : "Analyzing notice facets with Ollama Gemma 2..."
+    );
+
+    try {
+      const analyzeRes = await fetch(`${backendBase}/api/documents/${docId}/analyze?language=${lang}`, {
+        method: "POST",
+      });
+      if (analyzeRes.ok) {
+        const aData: NoticeAnalysisResult = await analyzeRes.json();
+        setAnalysisResult(aData);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+      setLoadingMessage("");
+    }
+  };
+
+  const handleLanguageChange = (lang: "en" | "hi" | "mr") => {
+    setSelectedLanguage(lang);
+    if (documentResult) {
+      runAnalysis(documentResult.document_id, lang);
+    }
+  };
+
   const handleFileUpload = async (file: File) => {
     if (!file) return;
 
@@ -165,7 +205,7 @@ export default function Home() {
 
     setError(null);
     setLoading(true);
-    setLoadingMessage(`Inspecting & extracting "${file.name}" locally with PyMuPDF...`);
+    setLoadingMessage(`Extracting "${file.name}" locally with PyMuPDF...`);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -185,16 +225,8 @@ export default function Home() {
       setDocumentResult(docData);
       setSelectedPage(1);
 
-      // Trigger automatic facet analysis
-      setLoadingMessage("Breaking notice into Dates, Eligibility, Documents & Actions...");
-      const analyzeRes = await fetch(`${backendBase}/api/documents/${docData.document_id}/analyze`, {
-        method: "POST",
-      });
-      if (analyzeRes.ok) {
-        const aData: NoticeAnalysisResult = await analyzeRes.json();
-        setAnalysisResult(aData);
-      }
-
+      // Trigger automatic facet analysis with selected language
+      await runAnalysis(docData.document_id, selectedLanguage);
       loadLibrary();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Failed to extract PDF.";
@@ -270,7 +302,12 @@ export default function Home() {
   const exportActionsMarkdown = () => {
     if (!analysisResult) return;
     let md = `# NoticeNap Action Checklist: ${analysisResult.filename}\n\n`;
-    md += `*Generated locally on ${analysisResult.generated_at} via ${analysisResult.ai_engine}*\n\n`;
+    md += `*Generated locally on ${analysisResult.generated_at} via ${analysisResult.ai_engine}*\n`;
+    md += `*Language: ${analysisResult.language}*\n\n`;
+    md += `## Purpose\n${analysisResult.purpose}\n\n`;
+    if (analysisResult.application_fee) {
+      md += `## Application Fee\n${analysisResult.application_fee}\n\n`;
+    }
     md += `## Critical Dates & Deadlines\n`;
     analysisResult.dates.forEach((d) => {
       md += `- **${d.title}**: ${d.date_str} *(Page ${d.source_page})*\n`;
@@ -294,20 +331,26 @@ export default function Home() {
     URL.revokeObjectURL(url);
   };
 
+  const downloadCalendarICS = () => {
+    if (!documentResult) return;
+    const url = `${backendBase}/api/documents/${documentResult.document_id}/calendar.ics`;
+    window.open(url, "_blank");
+  };
+
   const resetDesk = () => {
     setDocumentResult(null);
     setAnalysisResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
+    if (mobileFileInputRef.current) mobileFileInputRef.current.value = "";
   };
 
   const selectDocFromLibrary = async (doc: DocumentExtractionResult) => {
     setDocumentResult(doc);
     setSelectedPage(1);
     setActiveTab("analysis");
-    // Fetch or generate analysis
     try {
-      const res = await fetch(`${backendBase}/api/documents/${doc.document_id}/analysis`);
+      const res = await fetch(`${backendBase}/api/documents/${doc.document_id}/analysis?language=${selectedLanguage}`);
       if (res.ok) {
         setAnalysisResult(await res.json());
       }
@@ -342,8 +385,8 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen bg-surface font-sans text-on-surface antialiased">
-      {/* 1. LEFT NAVIGATION RAIL */}
-      <aside className="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[1px_0_0_0_#e1e4d9] z-50 flex flex-col justify-between py-6 px-4">
+      {/* 1. DESKTOP LEFT NAVIGATION RAIL (Visible on md+) */}
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[1px_0_0_0_#e1e4d9] z-50 flex-col justify-between py-6 px-4">
         <div className="flex flex-col gap-6">
           {/* Logo and Wordmark */}
           <div className="px-2 flex flex-col gap-2">
@@ -474,10 +517,10 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* 2. MAIN WORKSPACE VIEWPORT */}
-      <div className="pl-64 flex-1 flex flex-col min-w-0">
-        {/* Top Header */}
-        <header className="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-md shadow-[0_1px_0_0_#e1e4d9] z-40 px-8 flex items-center justify-between">
+      {/* 2. MAIN VIEWPORT */}
+      <div className="flex-1 flex flex-col min-w-0 md:pl-64">
+        {/* Desktop Top Header (md+) */}
+        <header className="hidden md:flex fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-md shadow-[0_1px_0_0_#e1e4d9] z-40 px-8 items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="relative h-6 w-6 shrink-0">
               <Image
@@ -501,6 +544,38 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Language Selector */}
+            <div className="flex items-center gap-1 bg-surface-container-low px-2 py-1 rounded-lg border border-outline-variant/40">
+              <span className="material-symbols-outlined text-[16px] text-secondary">translate</span>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange("en")}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                  selectedLanguage === "en" ? "bg-primary text-on-primary font-semibold" : "text-secondary hover:text-on-surface"
+                }`}
+              >
+                EN
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange("hi")}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                  selectedLanguage === "hi" ? "bg-primary text-on-primary font-semibold" : "text-secondary hover:text-on-surface"
+                }`}
+              >
+                हिंदी
+              </button>
+              <button
+                type="button"
+                onClick={() => handleLanguageChange("mr")}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono transition-colors ${
+                  selectedLanguage === "mr" ? "bg-primary text-on-primary font-semibold" : "text-secondary hover:text-on-surface"
+                }`}
+              >
+                मराठी
+              </button>
+            </div>
+
             <div className="flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full shadow-[0_0_0_1px_#e1e4d9]">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
@@ -511,14 +586,45 @@ export default function Home() {
                 {loading ? "INFERENCE: EXTRACTING" : "INFERENCE: STANDBY"}
               </span>
             </div>
+
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-on-primary">
               <span className="material-symbols-outlined text-[18px]">person</span>
             </div>
           </div>
         </header>
 
-        {/* Main Content Area */}
-        <main className="relative pt-24 pb-16 px-8 max-w-6xl mx-auto w-full flex flex-col gap-8">
+        {/* Mobile Top Header (< md) Matching Screen 05 */}
+        <header className="md:hidden fixed top-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.03)] px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary-container">
+              <Image
+                src="/logo.png"
+                alt="NoticeNap Logo"
+                width={20}
+                height={20}
+                className="w-5 h-5 object-contain"
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-serif text-[18px] font-semibold text-primary tracking-tight">NoticeNap</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-surface-container-lowest border border-outline-variant/40">
+              <span className={`w-1.5 h-1.5 rounded-full ${ollamaStatus.connected ? "bg-primary" : "bg-tertiary-fixed-dim"}`} />
+              <span className="font-mono text-[10px] text-on-surface-variant uppercase">
+                {ollamaStatus.connected ? "Ollama · Ready" : "Ollama · Standby"}
+              </span>
+            </div>
+            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-on-primary">
+              <span className="material-symbols-outlined text-[16px]">person</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Body */}
+        <main className="relative pt-20 md:pt-24 pb-24 md:pb-16 px-4 md:px-8 max-w-6xl mx-auto w-full flex flex-col gap-8">
           {/* Global Error Banner */}
           {error && (
             <div className="p-4 rounded-lg bg-error-container text-on-error-container border border-error/20 flex items-center gap-3 shadow-sm">
@@ -534,28 +640,45 @@ export default function Home() {
             </div>
           )}
 
-          {/* TAB 1: THE CALM DOCUMENT DESK (Screen 01) */}
+          {/* Scanned PDF Warning Banner if detected */}
+          {documentResult?.is_scanned && (
+            <div className="p-4 rounded-xl bg-tertiary-container/10 border border-tertiary/30 text-on-surface flex items-start gap-3">
+              <span className="material-symbols-outlined text-[22px] text-tertiary shrink-0 mt-0.5">
+                warning
+              </span>
+              <div className="flex flex-col gap-0.5">
+                <h4 className="text-[14px] font-semibold text-tertiary">
+                  Scanned Notice Detected
+                </h4>
+                <p className="text-[13px] text-secondary leading-relaxed">
+                  This document contains raster image pages without an embedded text layer. Please use an OCR-preprocessed notice for complete automated facet extraction.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1: THE CALM DOCUMENT DESK (Screen 01 & Mobile Screen 05) */}
           {activeTab === "desk" && (
             <>
-              {/* Header */}
+              {/* Header Title Section */}
               <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
                 <div className="flex flex-col gap-2 max-w-2xl">
                   <div className="flex items-center gap-2">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
                     <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-medium">
-                      Quiet Workspace
+                      Quiet Workspace · Local Provenance
                     </span>
                   </div>
-                  <h1 className="font-serif text-[32px] md:text-[38px] leading-tight text-on-surface tracking-tight font-normal">
-                    One less thing to figure out.
+                  <h1 className="font-serif text-[28px] md:text-[38px] leading-tight text-primary tracking-tight font-normal">
+                    Give that notice <span className="italic text-secondary">a rest.</span>
                   </h1>
-                  <p className="text-[16px] text-secondary leading-relaxed">
-                    Drop in an official notice. Extract dates, eligibility criteria, and next steps without cloud processing.
+                  <p className="text-[15px] md:text-[16px] text-secondary leading-relaxed">
+                    Turn a long PDF into the next few things you need to do without cloud processing.
                   </p>
                 </div>
                 <div className="flex items-center gap-2 self-start md:self-end text-secondary font-mono text-[11px]">
                   <span className="material-symbols-outlined text-[16px] text-primary">lock</span>
-                  <span>Local Ollama · 100% on device</span>
+                  <span>100% on device · Air-gapped</span>
                 </div>
               </section>
 
@@ -583,7 +706,7 @@ export default function Home() {
                       fileInputRef.current.click();
                     }
                   }}
-                  className={`group relative rounded-xl bg-surface-container-lowest p-10 md:p-14 border transition-all duration-300 flex flex-col items-center text-center cursor-pointer shadow-sm ${
+                  className={`group relative rounded-xl bg-surface-container-lowest p-6 md:p-14 border transition-all duration-300 flex flex-col items-center text-center cursor-pointer shadow-sm ${
                     isDragging
                       ? "border-primary bg-surface-container-high ring-2 ring-primary/20"
                       : "border-outline-variant/60 hover:border-primary-container/80"
@@ -609,15 +732,15 @@ export default function Home() {
                     </div>
 
                     <div className="flex flex-col gap-1">
-                      <h2 className="font-serif text-[24px] font-medium text-on-surface">
+                      <h2 className="font-serif text-[22px] md:text-[24px] font-medium text-on-surface">
                         {loading ? loadingMessage : "Give that PDF a rest."}
                       </h2>
-                      <p className="text-[14px] text-secondary">
+                      <p className="text-[13px] md:text-[14px] text-secondary">
                         Drop a scholarship, recruitment, academic, or examination notice here.
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-3">
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
                       <button
                         type="button"
                         disabled={loading}
@@ -625,12 +748,12 @@ export default function Home() {
                           e.stopPropagation();
                           fileInputRef.current?.click();
                         }}
-                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-primary-container text-on-primary font-semibold text-[15px] hover:bg-primary transition-all duration-150 active:translate-y-[0.5px] shadow-sm disabled:opacity-50"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary-container text-on-primary font-semibold text-[15px] hover:bg-primary transition-all duration-150 active:translate-y-[0.5px] shadow-sm disabled:opacity-50"
                       >
                         <span className="material-symbols-outlined text-[20px]">add</span>
                         <span>Choose a PDF</span>
                       </button>
-                      <span className="text-[12px] text-secondary">or drag document onto desk</span>
+                      <span className="text-[12px] text-secondary hidden sm:inline">or drag document onto desk</span>
                     </div>
 
                     <p className="font-mono text-[11px] text-secondary pt-2">
@@ -642,17 +765,17 @@ export default function Home() {
 
               {/* Extraction Blotter Summary when active */}
               {documentResult && (
-                <section className="rounded-xl bg-surface-container-lowest p-6 border border-outline-variant/70 shadow-sm flex flex-col gap-4">
+                <section className="rounded-xl bg-surface-container-lowest p-5 md:p-6 border border-outline-variant/70 shadow-sm flex flex-col gap-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/50 pb-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
                         <span className="material-symbols-outlined text-[24px]">picture_as_pdf</span>
                       </div>
                       <div>
-                        <h3 className="font-serif text-[20px] font-semibold text-on-surface">
+                        <h3 className="font-serif text-[18px] md:text-[20px] font-semibold text-on-surface">
                           {documentResult.filename}
                         </h3>
-                        <div className="flex items-center gap-3 font-mono text-[11px] text-secondary">
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3 font-mono text-[11px] text-secondary">
                           <span>{documentResult.page_count} Pages</span>
                           <span>•</span>
                           <span>{documentResult.total_words.toLocaleString()} Words</span>
@@ -662,11 +785,11 @@ export default function Home() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => setActiveTab("analysis")}
-                        className="px-4 py-2 rounded bg-primary text-on-primary text-[13px] font-medium flex items-center gap-1.5 shadow-sm hover:bg-primary-container"
+                        className="px-4 py-2 rounded-lg bg-primary text-on-primary text-[13px] font-medium flex items-center gap-1.5 shadow-sm hover:bg-primary-container"
                       >
                         <span className="material-symbols-outlined text-[16px]">visibility</span>
                         Open Full Analysis
@@ -674,7 +797,7 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={resetDesk}
-                        className="px-3 py-2 text-[12px] rounded border border-outline-variant/70 text-secondary hover:bg-surface-container-low transition-colors"
+                        className="px-3 py-2 text-[12px] rounded-lg border border-outline-variant/70 text-secondary hover:bg-surface-container-low transition-colors"
                       >
                         Clear Desk
                       </button>
@@ -683,58 +806,58 @@ export default function Home() {
                 </section>
               )}
 
-              {/* 4 Key Facets breakdown */}
-              <section className="flex flex-col gap-5">
-                <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+              {/* 4 Automated Extraction Categories (2x2 on Mobile, 4-col on Desktop) */}
+              <section className="flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-outline-variant/60 pb-2">
                   <span className="text-[11px] font-semibold tracking-wider uppercase text-secondary">
-                    Notice breakdown angles
+                    Automated Extraction
                   </span>
-                  <span className="font-mono text-[11px] text-secondary">4 Key Facets</span>
+                  <span className="font-mono text-[11px] text-secondary">4 Categories</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-2">
-                  <div className="flex flex-col gap-2">
-                    <span className="font-mono text-[11px] text-secondary">01 / Dates</span>
-                    <h3 className="text-[16px] font-semibold text-on-surface">Important Dates</h3>
-                    <p className="text-[12px] text-secondary leading-relaxed">
-                      Deadlines, examination windows, and interview schedules extracted cleanly.
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
+                  <div className="p-3 md:p-4 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                    <span className="font-mono text-[10px] md:text-[11px] text-secondary">01 / Dates</span>
+                    <h3 className="text-[14px] md:text-[16px] font-semibold text-on-surface">Deadlines</h3>
+                    <p className="text-[11px] md:text-[12px] text-secondary leading-relaxed">
+                      Cutoffs, exam windows &amp; schedules.
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <span className="font-mono text-[11px] text-secondary">02 / Eligibility</span>
-                    <h3 className="text-[16px] font-semibold text-on-surface">Eligibility</h3>
-                    <p className="text-[12px] text-secondary leading-relaxed">
-                      Age caps, degree benchmarks, percentage rules, and category stipulations.
+                  <div className="p-3 md:p-4 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                    <span className="font-mono text-[10px] md:text-[11px] text-secondary">02 / Eligibility</span>
+                    <h3 className="text-[14px] md:text-[16px] font-semibold text-on-surface">Eligibility</h3>
+                    <p className="text-[11px] md:text-[12px] text-secondary leading-relaxed">
+                      Age caps, marks &amp; conditions.
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <span className="font-mono text-[11px] text-secondary">03 / Documents</span>
-                    <h3 className="text-[16px] font-semibold text-on-surface">Required Documents</h3>
-                    <p className="text-[12px] text-secondary leading-relaxed">
-                      Certificates, size specifications, format limitations, and attestations.
+                  <div className="p-3 md:p-4 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                    <span className="font-mono text-[10px] md:text-[11px] text-secondary">03 / Documents</span>
+                    <h3 className="text-[14px] md:text-[16px] font-semibold text-on-surface">Documents</h3>
+                    <p className="text-[11px] md:text-[12px] text-secondary leading-relaxed">
+                      Certificates, formats &amp; file sizes.
                     </p>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <span className="font-mono text-[11px] text-secondary">04 / Actions</span>
-                    <h3 className="text-[16px] font-semibold text-on-surface">Next Steps</h3>
-                    <p className="text-[12px] text-secondary leading-relaxed">
-                      Sequential submission roadmap, registration portals, and fees.
+                  <div className="p-3 md:p-4 rounded-xl bg-surface-container-low flex flex-col gap-1">
+                    <span className="font-mono text-[10px] md:text-[11px] text-secondary">04 / Actions</span>
+                    <h3 className="text-[14px] md:text-[16px] font-semibold text-on-surface">Next Steps</h3>
+                    <p className="text-[11px] md:text-[12px] text-secondary leading-relaxed">
+                      Sequential roadmap &amp; portals.
                     </p>
                   </div>
                 </div>
               </section>
 
-              {/* Empty state with Sloth Illustration */}
+              {/* Empty state with Sloth Mascot */}
               {!documentResult && (
-                <section className="rounded-xl bg-surface-container-low p-8 md:p-10 shadow-[0_1px_4px_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                  <div className="flex flex-col md:flex-row items-center gap-8 md:gap-10 w-full">
-                    <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 flex items-center justify-center">
+                <section className="rounded-xl bg-surface-container-low p-6 md:p-10 shadow-[0_1px_4px_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-center gap-6 md:gap-12">
+                  <div className="flex flex-col md:flex-row items-center gap-6 md:gap-10 w-full">
+                    <div className="shrink-0 w-20 h-20 md:w-28 md:h-28 flex items-center justify-center">
                       <Image
                         src="/sloth.png"
-                        alt="NoticeNap Sleepy Sloth Resting on Desk Paperwork"
+                        alt="NoticeNap Sleepy Sloth resting on desk paperwork"
                         width={112}
                         height={112}
                         className="w-full h-full object-contain"
@@ -746,10 +869,10 @@ export default function Home() {
                         <span className="font-mono text-[11px] text-secondary uppercase font-medium">
                           Desk Tray · Empty
                         </span>
-                        <h3 className="font-serif text-[20px] font-semibold text-on-surface">
+                        <h3 className="font-serif text-[18px] md:text-[20px] font-semibold text-on-surface">
                           No paperwork processed yet.
                         </h3>
-                        <p className="text-[14px] text-secondary max-w-xl">
+                        <p className="text-[13px] md:text-[14px] text-secondary max-w-xl">
                           Your actionable checklist and deadline reminders will appear here as soon as you analyze a document.
                         </p>
                       </div>
@@ -762,9 +885,7 @@ export default function Home() {
                           onClick={() => loadSample("Rhodes_Scholarship_2025.pdf")}
                           className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
                         >
-                          <span className="material-symbols-outlined text-[14px] text-primary">
-                            description
-                          </span>
+                          <span className="material-symbols-outlined text-[14px] text-primary">description</span>
                           Rhodes Scholarship 2025
                         </button>
                         <button
@@ -772,9 +893,7 @@ export default function Home() {
                           onClick={() => loadSample("Civil_Services_Exam_Notice.pdf")}
                           className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
                         >
-                          <span className="material-symbols-outlined text-[14px] text-primary">
-                            description
-                          </span>
+                          <span className="material-symbols-outlined text-[14px] text-primary">description</span>
                           Civil Services Exam Notice
                         </button>
                         <button
@@ -782,9 +901,7 @@ export default function Home() {
                           onClick={() => loadSample("Research_Fellowship_PDF.pdf")}
                           className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
                         >
-                          <span className="material-symbols-outlined text-[14px] text-primary">
-                            description
-                          </span>
+                          <span className="material-symbols-outlined text-[14px] text-primary">description</span>
                           Research Fellowship PDF
                         </button>
                       </div>
@@ -799,33 +916,31 @@ export default function Home() {
           {activeTab === "analysis" && (
             <div className="flex flex-col gap-6">
               {!documentResult ? (
-                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                <div className="p-8 md:p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-[28px]">search</span>
                   </div>
-                  <h3 className="font-serif text-[22px] text-on-surface">No notice selected for analysis</h3>
-                  <p className="text-[14px] text-secondary max-w-md">
+                  <h3 className="font-serif text-[20px] md:text-[22px] text-on-surface">No notice selected for analysis</h3>
+                  <p className="text-[13px] md:text-[14px] text-secondary max-w-md">
                     Please upload a notice on the desk or choose an archived document from your library.
                   </p>
                   <button
                     type="button"
                     onClick={() => setActiveTab("desk")}
-                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                    className="px-6 py-2.5 rounded-lg bg-primary-container text-on-primary text-[14px] font-semibold"
                   >
                     Go to Calm Desk
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
                   {/* Left Column: Raw Document Page Viewer */}
-                  <div className="lg:col-span-5 flex flex-col gap-4 sticky top-24">
+                  <div className="lg:col-span-5 flex flex-col gap-4 sticky top-20 md:top-24">
                     <div className="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-3">
                       <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3">
                         <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-primary text-[20px]">
-                            description
-                          </span>
-                          <span className="font-serif font-medium text-[16px] truncate max-w-[200px]">
+                          <span className="material-symbols-outlined text-primary text-[20px]">description</span>
+                          <span className="font-serif font-medium text-[15px] md:text-[16px] truncate max-w-[200px]">
                             {documentResult.filename}
                           </span>
                         </div>
@@ -853,42 +968,75 @@ export default function Home() {
                       </div>
 
                       {/* Page Text Stream */}
-                      <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant/40 font-mono text-[12px] leading-relaxed text-on-surface whitespace-pre-wrap max-h-[500px] overflow-y-auto">
+                      <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant/40 font-mono text-[12px] leading-relaxed text-on-surface whitespace-pre-wrap max-h-[350px] md:max-h-[500px] overflow-y-auto">
                         {documentResult.pages.find((p) => p.page_number === selectedPage)?.text ||
                           "No selectable text on this page."}
                       </div>
 
-                      <div className="text-[11px] font-mono text-secondary text-right">
-                        Air-gapped PyMuPDF page stream
+                      <div className="flex items-center justify-between text-[11px] font-mono text-secondary">
+                        <span>SHA-256: {documentResult.sha256.slice(0, 8)}...</span>
+                        <span>Air-gapped PyMuPDF</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Right Column: Structured Facets */}
                   <div className="lg:col-span-7 flex flex-col gap-6">
-                    {/* Summary Card */}
-                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-3">
+                    {/* Executive Purpose & Summary Card */}
+                    <div className="p-5 md:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-3">
                       <div className="flex items-center justify-between">
                         <span className="font-mono text-[11px] uppercase tracking-wider text-secondary font-medium">
-                          Analysis Overview
+                          Analysis Overview · {analysisResult?.language.toUpperCase()}
                         </span>
                         <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-primary">
                           {analysisResult?.ai_engine || "deterministic-extractor"}
                         </span>
                       </div>
-                      <p className="text-[14px] text-on-surface leading-relaxed">
-                        {analysisResult?.summary || "Analysis in progress..."}
+
+                      <h3 className="font-serif text-[18px] font-semibold text-on-surface">
+                        {analysisResult?.purpose || "Notice Summary"}
+                      </h3>
+
+                      <p className="text-[13px] md:text-[14px] text-secondary leading-relaxed">
+                        {analysisResult?.summary}
                       </p>
+
+                      {/* Application Fee if stated */}
+                      {analysisResult?.application_fee && (
+                        <div className="mt-1 p-3 rounded-lg bg-surface-container-low border border-outline-variant/30 flex items-center justify-between">
+                          <span className="text-[12px] font-semibold text-secondary uppercase font-mono">
+                            Application Fee:
+                          </span>
+                          <span className="text-[13px] font-medium text-on-surface">
+                            {analysisResult.application_fee}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
+                    {/* Verification Notes / Uncertainties if any */}
+                    {analysisResult && analysisResult.uncertainties.length > 0 && (
+                      <div className="p-4 rounded-xl bg-surface-container-high border border-outline-variant/50 flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-tertiary">
+                          <span className="material-symbols-outlined text-[18px]">verified_user</span>
+                          <span className="font-mono text-[11px] uppercase tracking-wider font-semibold">
+                            Verification Notes &amp; Caveats
+                          </span>
+                        </div>
+                        {analysisResult.uncertainties.map((u, idx) => (
+                          <p key={idx} className="text-[12px] text-on-surface-variant leading-relaxed">
+                            • {u}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+
                     {/* 1. Dates Facet */}
-                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                    <div className="p-5 md:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
                       <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
                         <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[20px] text-primary">
-                            calendar_today
-                          </span>
-                          Critical Dates & Deadlines
+                          <span className="material-symbols-outlined text-[20px] text-primary">calendar_today</span>
+                          Critical Dates &amp; Deadlines
                         </h4>
                         <span className="font-mono text-[11px] text-secondary">
                           {analysisResult?.dates.length || 0} Identified
@@ -903,14 +1051,14 @@ export default function Home() {
                             className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer flex items-center justify-between border border-outline-variant/30"
                           >
                             <div className="flex flex-col gap-0.5">
-                              <span className="text-[14px] font-medium text-on-surface">
+                              <span className="text-[13px] md:text-[14px] font-medium text-on-surface">
                                 {d.title}
                               </span>
-                              <span className="font-mono text-[12px] text-secondary">
+                              <span className="font-mono text-[11px] md:text-[12px] text-secondary">
                                 {d.date_str}
                               </span>
                             </div>
-                            <span className="font-mono text-[11px] px-2 py-1 rounded bg-surface-container-lowest text-primary border border-outline-variant/40">
+                            <span className="font-mono text-[11px] px-2 py-1 rounded bg-surface-container-lowest text-primary border border-outline-variant/40 shrink-0">
                               Page {d.source_page}
                             </span>
                           </div>
@@ -919,12 +1067,10 @@ export default function Home() {
                     </div>
 
                     {/* 2. Eligibility Benchmarks */}
-                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                    <div className="p-5 md:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
                       <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
                         <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[20px] text-primary">
-                            verified_user
-                          </span>
+                          <span className="material-symbols-outlined text-[20px] text-primary">verified_user</span>
                           Eligibility Stipulations
                         </h4>
                         <span className="font-mono text-[11px] text-secondary">
@@ -940,7 +1086,7 @@ export default function Home() {
                             className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer flex items-center justify-between border border-outline-variant/30"
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className="material-symbols-outlined text-[16px] text-primary">
+                              <span className="material-symbols-outlined text-[16px] text-primary shrink-0">
                                 check_circle
                               </span>
                               <span className="text-[13px] text-on-surface">{e.requirement}</span>
@@ -954,12 +1100,10 @@ export default function Home() {
                     </div>
 
                     {/* 3. Required Documents */}
-                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                    <div className="p-5 md:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
                       <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
                         <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[20px] text-primary">
-                            folder
-                          </span>
+                          <span className="material-symbols-outlined text-[20px] text-primary">folder</span>
                           Required Documents Checklist
                         </h4>
                         <span className="font-mono text-[11px] text-secondary">
@@ -992,18 +1136,18 @@ export default function Home() {
           {activeTab === "actions" && (
             <div className="flex flex-col gap-6">
               {!analysisResult ? (
-                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                <div className="p-8 md:p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-[28px]">checklist</span>
                   </div>
-                  <h3 className="font-serif text-[22px] text-on-surface">No action list generated yet</h3>
-                  <p className="text-[14px] text-secondary max-w-md">
+                  <h3 className="font-serif text-[20px] md:text-[22px] text-on-surface">No action list generated yet</h3>
+                  <p className="text-[13px] md:text-[14px] text-secondary max-w-md">
                     Process an official notice on the calm desk to generate your custom step-by-step checklist.
                   </p>
                   <button
                     type="button"
                     onClick={() => setActiveTab("desk")}
-                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                    className="px-6 py-2.5 rounded-lg bg-primary-container text-on-primary text-[14px] font-semibold"
                   >
                     Go to Calm Desk
                   </button>
@@ -1011,24 +1155,34 @@ export default function Home() {
               ) : (
                 <div className="flex flex-col gap-6">
                   {/* Progress Header Card */}
-                  <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                  <div className="p-5 md:p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
                         <span className="font-mono text-[11px] text-secondary uppercase">
                           Action Checklist · {analysisResult.filename}
                         </span>
-                        <h2 className="font-serif text-[24px] text-on-surface font-semibold">
+                        <h2 className="font-serif text-[22px] md:text-[24px] text-on-surface font-semibold">
                           Your Streamlined Next Steps
                         </h2>
                       </div>
-                      <button
-                        type="button"
-                        onClick={exportActionsMarkdown}
-                        className="px-4 py-2 rounded bg-surface-container-low hover:bg-secondary-container transition-colors text-primary font-mono text-[12px] flex items-center gap-1.5 border border-outline-variant/60 self-start sm:self-auto"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">download</span>
-                        Export Checklist (.md)
-                      </button>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={downloadCalendarICS}
+                          className="px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-secondary-container transition-colors text-primary font-mono text-[12px] flex items-center gap-1.5 border border-outline-variant/60"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">calendar_add_on</span>
+                          Add to Calendar (.ics)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={exportActionsMarkdown}
+                          className="px-3.5 py-2 rounded-lg bg-surface-container-low hover:bg-secondary-container transition-colors text-primary font-mono text-[12px] flex items-center gap-1.5 border border-outline-variant/60"
+                        >
+                          <span className="material-symbols-outlined text-[16px]">download</span>
+                          Export Checklist (.md)
+                        </button>
+                      </div>
                     </div>
 
                     {/* Progress Bar */}
@@ -1046,7 +1200,7 @@ export default function Home() {
                     </div>
 
                     {/* Filter Pills */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-outline-variant/30">
+                    <div className="flex items-center gap-2 pt-2 border-t border-outline-variant/30 flex-wrap">
                       <button
                         type="button"
                         onClick={() => setFilterAction("all")}
@@ -1089,7 +1243,7 @@ export default function Home() {
                       <div
                         key={action.step_number}
                         onClick={() => toggleAction(action.step_number)}
-                        className={`p-5 rounded-xl border transition-all cursor-pointer flex items-start gap-4 ${
+                        className={`p-4 md:p-5 rounded-xl border transition-all cursor-pointer flex items-start gap-4 ${
                           action.completed
                             ? "bg-surface-container-low/60 border-outline-variant/40 opacity-75"
                             : "bg-surface-container-lowest border-outline-variant/70 shadow-sm hover:border-primary-container"
@@ -1099,13 +1253,13 @@ export default function Home() {
                           type="checkbox"
                           checked={action.completed}
                           onChange={() => {}}
-                          className="mt-1 h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                          className="mt-1 h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer accent-primary"
                         />
 
-                        <div className="flex-1 flex flex-col gap-1">
-                          <div className="flex items-center justify-between">
+                        <div className="flex-1 flex flex-col gap-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
                             <span
-                              className={`text-[15px] font-medium ${
+                              className={`text-[14px] md:text-[15px] font-medium leading-snug ${
                                 action.completed
                                   ? "line-through text-secondary"
                                   : "text-on-surface"
@@ -1113,12 +1267,12 @@ export default function Home() {
                             >
                               Step {action.step_number}: {action.title}
                             </span>
-                            <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-primary border border-outline-variant/40">
+                            <span className="font-mono text-[10px] md:text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-primary border border-outline-variant/40 shrink-0">
                               Page {action.source_page}
                             </span>
                           </div>
                           <p
-                            className={`text-[13px] leading-relaxed ${
+                            className={`text-[12px] md:text-[13px] leading-relaxed ${
                               action.completed ? "text-secondary" : "text-secondary"
                             }`}
                           >
@@ -1138,10 +1292,10 @@ export default function Home() {
             <div className="flex flex-col gap-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline-variant/40">
                 <div>
-                  <h2 className="font-serif text-[28px] text-on-surface font-semibold">
+                  <h2 className="font-serif text-[24px] md:text-[28px] text-on-surface font-semibold">
                     Document Library
                   </h2>
-                  <p className="text-[14px] text-secondary">
+                  <p className="text-[13px] md:text-[14px] text-secondary">
                     Your archival desk tray with historical notice breakdowns.
                   </p>
                 </div>
@@ -1152,7 +1306,7 @@ export default function Home() {
                     value={searchLibrary}
                     onChange={(e) => setSearchLibrary(e.target.value)}
                     placeholder="Filter library notices..."
-                    className="pl-9 pr-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-[13px] text-on-surface focus:outline-none focus:border-primary"
+                    className="pl-9 pr-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-[13px] text-on-surface focus:outline-none focus:border-primary w-full sm:w-64"
                   />
                   <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-secondary">
                     search
@@ -1161,24 +1315,24 @@ export default function Home() {
               </div>
 
               {libraryDocs.length === 0 ? (
-                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                <div className="p-8 md:p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
                     <span className="material-symbols-outlined text-[28px]">folder_open</span>
                   </div>
-                  <h3 className="font-serif text-[22px] text-on-surface">No documents archived yet</h3>
-                  <p className="text-[14px] text-secondary max-w-md">
+                  <h3 className="font-serif text-[20px] md:text-[22px] text-on-surface">No documents archived yet</h3>
+                  <p className="text-[13px] md:text-[14px] text-secondary max-w-md">
                     Notices extracted on the desk will automatically be archived in your private local library.
                   </p>
                   <button
                     type="button"
                     onClick={() => setActiveTab("desk")}
-                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                    className="px-6 py-2.5 rounded-lg bg-primary-container text-on-primary text-[14px] font-semibold"
                   >
                     Process First Notice
                   </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                   {libraryDocs
                     .filter((d) => d.filename.toLowerCase().includes(searchLibrary.toLowerCase()))
                     .map((doc) => (
@@ -1201,7 +1355,7 @@ export default function Home() {
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                           </div>
-                          <h3 className="font-serif text-[17px] font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                          <h3 className="font-serif text-[16px] md:text-[17px] font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-2">
                             {doc.filename}
                           </h3>
                         </div>
@@ -1223,13 +1377,13 @@ export default function Home() {
           )}
 
           {/* 5. TRUST AND TRACEABILITY BANNER */}
-          <footer className="rounded-lg bg-surface-container-lowest p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-6 mb-6 border border-outline-variant/40">
+          <footer className="rounded-lg bg-surface-container-lowest p-5 md:p-6 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 mb-2 md:mb-6 border border-outline-variant/40">
             <div className="flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-[20px]">
-                menu_book
+                verified_user
               </span>
               <div className="flex flex-col">
-                <h4 className="text-[16px] font-semibold text-on-surface">
+                <h4 className="text-[15px] md:text-[16px] font-semibold text-on-surface">
                   Every fact verified with source page citations
                 </h4>
                 <p className="text-[12px] text-secondary">
@@ -1237,17 +1391,78 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <span className="font-mono text-[11px] text-secondary">
+            <span className="font-mono text-[11px] text-secondary shrink-0">
               Source-linked guarantee
             </span>
           </footer>
         </main>
       </div>
 
-      {/* 3. SETTINGS MODAL */}
+      {/* 3. MOBILE FIXED BOTTOM NAVIGATION BAR (< md) Matching Screen 05 */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-surface/90 backdrop-blur-xl shadow-[0_-2px_12px_rgba(37,41,34,0.03)] border-t border-outline-variant/40">
+        <div className="flex items-center justify-around h-16 px-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab("desk")}
+            className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-0.5 transition-colors ${
+              activeTab === "desk" ? "text-primary font-semibold" : "text-on-surface-variant"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[22px]">manage_search</span>
+            <span className="font-mono text-[11px]">The Desk</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("analysis")}
+            className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-0.5 transition-colors ${
+              activeTab === "analysis" ? "text-primary font-semibold" : "text-on-surface-variant"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[22px]">analytics</span>
+            <span className="font-mono text-[11px]">Analysis</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("actions")}
+            className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-0.5 transition-colors ${
+              activeTab === "actions" ? "text-primary font-semibold" : "text-on-surface-variant"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[22px]">checklist</span>
+            <span className="font-mono text-[11px]">Actions</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab("library");
+              loadLibrary();
+            }}
+            className={`flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-0.5 transition-colors ${
+              activeTab === "library" ? "text-primary font-semibold" : "text-on-surface-variant"
+            }`}
+          >
+            <span className="material-symbols-outlined text-[22px]">folder_open</span>
+            <span className="font-mono text-[11px]">Library</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowSettingsModal(true)}
+            className="flex flex-col items-center justify-center min-w-[64px] min-h-[44px] gap-0.5 text-on-surface-variant"
+          >
+            <span className="material-symbols-outlined text-[22px]">tune</span>
+            <span className="font-mono text-[11px]">Settings</span>
+          </button>
+        </div>
+      </nav>
+
+      {/* 4. SETTINGS MODAL */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-6 shadow-xl border border-outline-variant/60 flex flex-col gap-6">
+          <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-6 shadow-xl border border-outline-variant/60 flex flex-col gap-5">
             <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-[22px]">settings</span>
@@ -1265,6 +1480,48 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-4">
+              {/* Language Preference */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-on-surface">
+                  Preferred Analysis Language
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageChange("en")}
+                    className={`py-2 rounded-lg text-[12px] font-mono border transition-colors ${
+                      selectedLanguage === "en"
+                        ? "bg-primary text-on-primary border-primary font-semibold"
+                        : "bg-surface-container-low border-outline-variant/60 text-secondary"
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageChange("hi")}
+                    className={`py-2 rounded-lg text-[12px] font-mono border transition-colors ${
+                      selectedLanguage === "hi"
+                        ? "bg-primary text-on-primary border-primary font-semibold"
+                        : "bg-surface-container-low border-outline-variant/60 text-secondary"
+                    }`}
+                  >
+                    हिंदी (Hindi)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleLanguageChange("mr")}
+                    className={`py-2 rounded-lg text-[12px] font-mono border transition-colors ${
+                      selectedLanguage === "mr"
+                        ? "bg-primary text-on-primary border-primary font-semibold"
+                        : "bg-surface-container-low border-outline-variant/60 text-secondary"
+                    }`}
+                  >
+                    मराठी (Marathi)
+                  </button>
+                </div>
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-semibold text-on-surface">
                   Local Ollama Host
@@ -1276,7 +1533,7 @@ export default function Home() {
                   className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/60 font-mono text-[13px] text-secondary cursor-not-allowed"
                 />
                 <span className="text-[11px] text-secondary">
-                  Configure via NOTICENAP_OLLAMA_HOST in .env
+                  Configured via NOTICENAP_OLLAMA_HOST in .env
                 </span>
               </div>
 
@@ -1291,7 +1548,7 @@ export default function Home() {
                   className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/60 font-mono text-[13px] text-secondary cursor-not-allowed"
                 />
                 <span className="text-[11px] text-secondary">
-                  Recommended: Gemma 2 (9B/2B) for fast local summarization
+                  Active Model: Gemma 2 (5.4 GB on-device)
                 </span>
               </div>
 
@@ -1318,12 +1575,12 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 flex items-start gap-2.5 text-secondary">
+              <div className="p-3 rounded-lg bg-surface-container border border-outline-variant/30 flex items-start gap-2.5 text-secondary">
                 <span className="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">
                   shield
                 </span>
                 <p className="text-[12px] leading-relaxed">
-                  NoticeNap never transmits document contents outside localhost. All extractions and analyses happen 100% on this machine.
+                  Air-Gapped Guarantee: NoticeNap never sends PDF bytes to cloud services. All analysis runs directly on your computer.
                 </p>
               </div>
             </div>
@@ -1332,7 +1589,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setShowSettingsModal(false)}
-                className="px-5 py-2 rounded bg-primary text-on-primary text-[13px] font-semibold hover:bg-primary-container transition-colors"
+                className="px-5 py-2 rounded-lg bg-primary text-on-primary text-[13px] font-semibold hover:bg-primary-container transition-colors"
               >
                 Done
               </button>
