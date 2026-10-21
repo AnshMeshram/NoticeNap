@@ -1,156 +1,201 @@
-# NoticeNap
+# NoticeNap 🦥
 
-> *"Let the notice be long. Your to-do list shouldn't."*
+<p align="center">
+  <img src="stitch-handoff/logo.png" alt="NoticeNap Logo" width="80" />
+</p>
 
-**NoticeNap** is a calm, editorial, privacy-first archival desk interface designed to transform complex, lengthy public notices—scholarships, competitive examinations, recruitment notifications, and bureaucratic circulars—into concise, source-cited action checklists entirely on your local machine.
+<p align="center">
+  <strong><em>"Let the notice be long. Your to-do list shouldn't."</em></strong>
+</p>
 
-No cloud uploads. No private PDFs leaving your device. No hallucinations without page references.
-
----
-
-## 🌿 Approved Stitch Design System
-
-NoticeNap was designed in **Google Stitch Canvas** (Project ID: `14480156016592971476` — *NoticeNap Workspace Interface*). The design aesthetic is calm, editorial, minimal, and useful:
-
-- **Warm Paper Desk Background**: `#f8fbef`
-- **Deep Forest Green**: `#0a3626` (Wordmark, typography, dark buttons)
-- **Primary Container Fill**: `#244d3b`
-- **Soft Sage & Muted Slate**: `#dae3d0`, `#586152`
-- **Muted Amber Warning/Standby**: `#f0bf63`
-- **Editorial Typography**:
-  - Headings & Display: **Newsreader** (Serif)
-  - Interface & Body: **Manrope** (Sans-serif)
-  - Citations, Badges & Endpoints: **JetBrains Mono** (Monospace)
-- **Restrained Mascot**: Sleepy sloth resting on desk paperwork.
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20On--Device-forestgreen.svg" alt="Privacy" />
+  <img src="https://img.shields.io/badge/Next.js-16%20(React%2019)-black.svg" alt="Next.js" />
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688.svg" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Extractor-PyMuPDF-orange.svg" alt="PyMuPDF" />
+  <img src="https://img.shields.io/badge/AI%20Engine-Ollama%20%7C%20Gemma%202-blue.svg" alt="Ollama" />
+  <img src="https://img.shields.io/badge/Build-Passing-brightgreen.svg" alt="Build" />
+</p>
 
 ---
 
-## 📋 Approved Stitch Screen Manifest
+## 🌿 Overview
 
-| Screen # | Screen Title | Stitch ID | Viewport | Route | Status |
-|:---|:---|:---|:---|:---|:---|
-| **01** | **NoticeNap — The Calm Document Desk** | `d9bf8d7fd92d46ec8466ab1ae3279c6e` | 2560 × 3064 | `/` | **Implemented (Slice 1)** |
-| **02** | **NoticeNap — 02 Document Analysis** | `95149c00f2b749528d5a0aa72e2aaedf` | 2560 × 3492 | `/analysis/[id]` | Mapped for Phase 3 |
-| **03** | **NoticeNap — 03 My Action List** | `ed15fd037b6044eebfaecb162a62eabc` | 2560 × 5016 | `/actions` | Mapped for Phase 4 |
-| **04** | **NoticeNap — 04 Document Library** | `48c85fd03e954c4186d0179ee0abea83` | 2560 × 3824 | `/library` | Mapped for Phase 5 |
-| **05** | **NoticeNap — 05 Mobile Experience** | `eee916a541ac407292fe7a829c7831d5` | 780 × 2890 | Responsive Breakpoint | Responsive Layout |
+**NoticeNap** is an editorial, air-gapped archival desk application engineered to digest intimidating, multi-page public notices—scholarship announcements, civil service exams, recruitment circulars, and university ordinances—and extract unambiguous, source-cited action checklists directly on your local machine.
 
-Complete screen manifests and endpoint specifications are documented in:
-- [`docs/SCREEN_MANIFEST.md`](docs/SCREEN_MANIFEST.md)
-- [`docs/ROUTE_API_MAPPING.md`](docs/ROUTE_API_MAPPING.md)
+Designed in **Google Stitch Canvas** (Project ID: `14480156016592971476`), NoticeNap replaces stressful bureaucratic clutter with a warm, restorative paper aesthetic.
 
 ---
 
-## 🏛️ System Architecture
+## ✨ Advanced System Features
+
+### 1. 🛋️ The Calm Document Desk (`Screen 01`)
+- Tactile, distraction-free PDF drop zone with drag-and-drop feedback and 50MB file validation.
+- Live probe for local Ollama connectivity (`localhost:11434`) displaying real-time daemon and model readiness.
+- Restorative empty desk tray featuring the NoticeNap sleepy sloth mascot resting on desk paperwork.
+- Quick-launch sample notices (*Rhodes Scholarship 2025*, *Civil Services Exam Notice*, *Research Fellowship PDF*).
+
+### 2. 🔍 Document Analysis Split View (`Screen 02`)
+- Synchronized split view: left-hand air-gapped page stream alongside structured facet cards.
+- **4 Key Breakdown Angles**:
+  - **Important Dates**: Deadlines, exam windows, and interview dates with source-page badges.
+  - **Eligibility Stipulations**: Age limits, educational benchmarks, and criteria classification.
+  - **Required Documents**: File formats, certificate rules, and size stipulations.
+  - **Sequential Next Steps**: Actionable chronological checklist.
+- Page navigation buttons (`Page 1`, `Page 2`, ...) allow instant verification of extracted clauses.
+
+### 3. ✅ My Action List (`Screen 03`)
+- Interactive task checklist with individual checkbox toggles and reactive progress tracking bar (`% Completed`).
+- Source page citation links on every action item for immediate auditability.
+- Filter by **All**, **Pending**, and **Completed** tasks.
+- One-click **Markdown Export** (`.md`) to integrate directly into Obsidian, Notion, or personal task managers.
+
+### 4. 🗄️ Document Library (`Screen 04`)
+- Local historical ledger storing all processed notices on the archival desk tray.
+- Instant search filter by filename, SHA-256 fingerprint, page count, and file size.
+- One-click re-inspection and removal from desk storage.
+
+### 5. 🛡️ Hardened PDF Security Guard
+- **In-Memory Parsing**: Safely parses documents via PyMuPDF without executing embedded JavaScript or macros.
+- **Payload Neutralization**: Scans raw bytes for `/JS`, `/JavaScript`, `/Launch`, `/SubmitForm`, and `/ImportData`.
+- **Path Traversal Protection**: Aggressively cleans filenames against directory traversal exploits (`../../`).
+- **Decompression Trap Safeguard**: Enforces maximum page limits (250 pages) to guard against zip-bomb style attacks.
+
+---
+
+## 🎨 Approved Stitch Design Tokens
+
+| Token | Hex / Spec | Role in Interface |
+|:---|:---|:---|
+| `surface` / `background` | `#f8fbef` | Calm warm paper desk background |
+| `primary` | `#0a3626` | Deep forest green typography, titles, active chips |
+| `primary-container` | `#244d3b` | Primary call-to-action buttons |
+| `secondary-container` | `#dae3d0` | Soft sage active sidebar navigation pill |
+| `surface-container-low` | `#f2f5ea` | Left rail navigation and empty state tray |
+| `surface-container-lowest`| `#ffffff` | Primary document drop card and paper blotters |
+| `outline-variant` | `#c1c8c2` | Subtle editorial hairline dividers |
+| `tertiary-fixed-dim` | `#f0bf63` | Status standby amber dot |
+| **Headline Font** | **Newsreader** | Editorial display headings and titles |
+| **Body & Label Font** | **Manrope** | UI controls, labels, and paragraph copy |
+| **Mono Font** | **JetBrains Mono**| Source citations, SHA-256 hashes, and status chips |
+
+---
+
+## 🏛️ Architecture & Data Flow
 
 ```
-                                      ┌────────────────────────────────────┐
-                                      │        Next.js 16 Frontend         │
-                                      │   React 19 • Tailwind CSS • TS     │
-                                      │        (http://localhost:3000)     │
-                                      └─────────────────┬──────────────────┘
-                                                        │
-                              REST API (CORS)           │
-                              multipart/form-data       ▼
-                                      ┌────────────────────────────────────┐
-                                      │          FastAPI Backend           │
-                                      │        (http://localhost:8000)     │
-                                      └───────┬────────────────────┬───────┘
-                                              │                    │
-                  Local In-Memory Extraction  │                    │ Health & Tags Check
-                                              ▼                    ▼
-                                      ┌───────────────┐    ┌───────────────┐
-                                      │   PyMuPDF     │    │  Local Ollama │
-                                      │ (fitz engine) │    │  Gemma 2 (9B) │
-                                      └───────────────┘    └───────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                        Next.js 16 Web Dashboard                       │
+│             React 19 • TypeScript • Tailwind CSS v4 • Icons            │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                         REST API (Localhost only)
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                         FastAPI Python Backend                         │
+│            Config • Endpoints • Memory Cache • File Handlers           │
+└─────────┬─────────────────────────┬─────────────────────────┬──────────┘
+          │                         │                         │
+          ▼                         ▼                         ▼
+┌──────────────────┐      ┌──────────────────┐      ┌──────────────────┐
+│ PDFSecurityGuard │      │ PyMuPDF (fitz)   │      │   Local Ollama   │
+│ - Sanitization   │      │ - Page stream    │      │ - Gemma 2 (9B)   │
+│ - Threat check   │      │ - Word/Char ct   │      │ - Deterministic  │
+│ - Page bounds    │      │ - Page indexing  │      │   fallback engine│
+└──────────────────┘      └──────────────────┘      └──────────────────┘
 ```
 
 ---
 
-## 🛡️ Core Engineering & Privacy Guarantees
+## 🚀 Quickstart Guide
 
-1. **100% On-Device & Air-Gapped**: Private documents are never transmitted to any third-party or cloud AI provider.
-2. **Untrusted Input Sanitation**: PDF files are treated as untrusted inputs and parsed safely in-memory using PyMuPDF. Embedded scripts and instructions are never executed.
-3. **Exact Page Traceability**: Every extracted clause and fact is tagged with its original 1-indexed source page number (`Page 1`, `Page 2`, etc.).
-4. **No Fabricated Data**: If local Ollama or the model is offline, the interface explicitly displays standby status rather than faking AI inference.
-
----
-
-## 🚀 Getting Started
-
-### Prerequisites
-- **Node.js**: v20+ (tested on v22.13.1) and npm
+### 1. Prerequisites
+- **Node.js**: v20+ (tested on v22.13.1)
 - **Python**: v3.11+ (tested on v3.13.2)
-- **Ollama** *(optional for Phase 1)*: Running locally on `http://localhost:11434` with `gemma2` model.
+- **Ollama** *(optional)*: Running on `http://localhost:11434` with `gemma2` model (`ollama run gemma2`)
 
-### 1. Backend Setup (FastAPI)
-
+### 2. Backend Setup
 ```bash
-# Navigate to project root
-pip install fastapi uvicorn pymupdf pydantic httpx python-multipart pytest pytest-asyncio
+# Clone the repository
+git clone https://github.com/AnshMeshram/NoticeNap.git
+cd NoticeNap
 
-# Run the test suite
+# Install backend dependencies
+pip install -r backend/requirements.txt
+
+# Run backend unit tests
 python -m pytest backend/test_backend.py -v
 
-# Start the FastAPI backend server
+# Start the FastAPI backend
 python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+API Documentation will be live at `http://127.0.0.1:8000/docs`.
 
-Backend will be accessible at `http://127.0.0.1:8000` with automatic docs at `http://127.0.0.1:8000/docs`.
-
-### 2. Frontend Setup (Next.js)
-
+### 3. Frontend Setup
 ```bash
-# Navigate to frontend directory
+# In a new terminal, navigate to frontend
 cd frontend
 
-# Install dependencies
+# Install npm dependencies
 npm install
 
-# Run the development server
+# Run the Next.js development server
 npm run dev
 ```
+Open **[http://localhost:3000](http://localhost:3000)** in your browser.
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to view the Calm Document Desk.
-
-### 3. Generate Sample Notices
-
-NoticeNap includes a built-in sample notice generator script:
-
+### 4. Generate Sample Notices
+NoticeNap provides a built-in sample notice generator script:
 ```bash
 python samples/generate_sample_notices.py
 ```
-
-This generates three realistic sample notices in `samples/` and `frontend/public/samples/`:
+This produces three ready-to-test PDF files:
 - `Rhodes_Scholarship_2025.pdf`
 - `Civil_Services_Exam_Notice.pdf`
 - `Research_Fellowship_PDF.pdf`
 
-Clicking any of these chips in the empty state tray loads and extracts them instantly.
+---
+
+## ⚙️ Environment Variables
+
+Copy `.env.example` to `.env` to customize settings:
+
+```ini
+# Backend configuration
+NOTICENAP_OLLAMA_HOST=http://localhost:11434
+NOTICENAP_OLLAMA_MODEL=gemma2
+
+# Frontend configuration
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+```
 
 ---
 
-## 🧪 Verification & Quality
+## 🧪 Quality & Test Verification
 
-- **Backend Tests**: 6 passing unit tests verifying PDF extraction, page indexing, status checks, and error handling.
-- **Frontend Code Quality**:
-  - `npm run lint`: 0 errors, 0 warnings.
-  - `npm run build`: Production build verified with zero warnings.
-
----
-
-## 🗺️ Implementation Roadmap
-
-- [x] **Phase 0**: Verify Google Stitch MCP connection, audit project `14480156016592971476`, download approved screen assets.
-- [x] **Phase 1**: Screen manifest, route & API mapping architecture, sample notice generator.
-- [x] **Phase 2**: First working slice — The Calm Document Desk (Screen 01), PyMuPDF local page extractor, live Ollama daemon connectivity card, drag-and-drop file upload.
-- [ ] **Phase 3**: Screen 02 (Document Analysis) — Two-column split viewer with structured extraction cards.
-- [ ] **Phase 4**: Screen 03 (My Action List) — Prioritized checklist with page citation jumps.
-- [ ] **Phase 5**: Screen 04 (Document Library) — Archival desk tray and local document storage.
+| Component | Test Suite | Result |
+|:---|:---|:---|
+| **Backend API & Security** | `pytest backend/test_backend.py -v` | **4/4 Tests Passed** |
+| **Frontend Type Checking** | TypeScript Compiler (`tsc`) | **0 Errors** |
+| **Frontend Code Quality** | ESLint (`npm run lint`) | **0 Errors, 0 Warnings** |
+| **Production Bundle** | Next.js Build (`npm run build`) | **Compiled Successfully** |
 
 ---
 
-## 📄 License & Credits
+## 🗺️ Project Roadmap
 
-Created by [Ansh Meshram](https://github.com/AnshMeshram) for Hacktoberfest 2026.
+- [x] **Phase 0**: Google Stitch MCP connection, project audit (`14480156016592971476`), asset handoff.
+- [x] **Phase 1**: Screen manifest, route & API mapping, sample notice generator.
+- [x] **Phase 2**: Slice 1 — The Calm Document Desk (`Screen 01`), PyMuPDF local extractor, live Ollama daemon probe.
+- [x] **Phase 3**: Hardened `PDFSecurityGuard` and Document Analysis split view (`Screen 02`).
+- [x] **Phase 4**: Interactive Action List (`Screen 03`) with progress tracker and Markdown export.
+- [x] **Phase 5**: Document Library (`Screen 04`) with historical desk tray ledger.
+- [ ] **Phase 6**: Mobile native responsive gestures and camera PDF capture.
+
+---
+
+## 📄 License & Author
+
+Created by **[Ansh Meshram](https://github.com/AnshMeshram)** for Hacktoberfest 2026.  
 Licensed under the [MIT License](LICENSE).

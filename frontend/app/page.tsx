@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 
 interface ExtractedPage {
@@ -19,6 +19,50 @@ interface DocumentExtractionResult {
   total_words: number;
   pages: ExtractedPage[];
   is_encrypted: boolean;
+  security_warnings?: string[];
+}
+
+interface NoticeDate {
+  title: string;
+  date_str: string;
+  is_deadline: boolean;
+  source_page: number;
+  context: string;
+}
+
+interface EligibilityItem {
+  category: string;
+  requirement: string;
+  is_strict: boolean;
+  source_page: number;
+}
+
+interface RequiredDocument {
+  name: string;
+  specification: string;
+  is_mandatory: boolean;
+  source_page: number;
+}
+
+interface ActionStep {
+  step_number: number;
+  title: string;
+  description: string;
+  deadline?: string;
+  source_page: number;
+  completed: boolean;
+}
+
+interface NoticeAnalysisResult {
+  document_id: string;
+  filename: string;
+  summary: string;
+  dates: NoticeDate[];
+  eligibility: EligibilityItem[];
+  documents: RequiredDocument[];
+  actions: ActionStep[];
+  ai_engine: string;
+  generated_at: string;
 }
 
 interface OllamaStatus {
@@ -31,13 +75,21 @@ interface OllamaStatus {
 }
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<"desk" | "analysis" | "actions" | "library">("desk");
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [documentResult, setDocumentResult] = useState<DocumentExtractionResult | null>(null);
-  const [activeTab, setActiveTab] = useState("desk");
   const [selectedPage, setSelectedPage] = useState<number>(1);
+  const [filterAction, setFilterAction] = useState<"all" | "pending" | "completed">("all");
+  const [searchLibrary, setSearchLibrary] = useState("");
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+
+  // Core Data Stores
+  const [documentResult, setDocumentResult] = useState<DocumentExtractionResult | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<NoticeAnalysisResult | null>(null);
+  const [libraryDocs, setLibraryDocs] = useState<DocumentExtractionResult[]>([]);
+
   const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus>({
     connected: false,
     ollama_host: "http://localhost:11434",
@@ -51,7 +103,7 @@ export default function Home() {
   const backendBase = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
   // Check Ollama system connectivity
-  const checkStatus = React.useCallback(async () => {
+  const checkStatus = useCallback(async () => {
     try {
       const res = await fetch(`${backendBase}/api/system/status`);
       if (res.ok) {
@@ -73,16 +125,30 @@ export default function Home() {
     }
   }, [backendBase]);
 
+  // Load Library Documents
+  const loadLibrary = useCallback(async () => {
+    try {
+      const res = await fetch(`${backendBase}/api/documents`);
+      if (res.ok) {
+        const data = await res.json();
+        setLibraryDocs(data);
+      }
+    } catch {
+      // Backend offline or error
+    }
+  }, [backendBase]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       checkStatus();
+      loadLibrary();
     }, 0);
     const interval = setInterval(checkStatus, 10000);
     return () => {
       clearTimeout(timer);
       clearInterval(interval);
     };
-  }, [checkStatus]);
+  }, [checkStatus, loadLibrary]);
 
   const handleFileUpload = async (file: File) => {
     if (!file) return;
@@ -99,7 +165,7 @@ export default function Home() {
 
     setError(null);
     setLoading(true);
-    setLoadingMessage(`Extracting "${file.name}" locally with PyMuPDF...`);
+    setLoadingMessage(`Inspecting & extracting "${file.name}" locally with PyMuPDF...`);
 
     const formData = new FormData();
     formData.append("file", file);
@@ -115,9 +181,21 @@ export default function Home() {
         throw new Error(errorData.detail || `Server responded with HTTP ${res.status}`);
       }
 
-      const data: DocumentExtractionResult = await res.json();
-      setDocumentResult(data);
+      const docData: DocumentExtractionResult = await res.json();
+      setDocumentResult(docData);
       setSelectedPage(1);
+
+      // Trigger automatic facet analysis
+      setLoadingMessage("Breaking notice into Dates, Eligibility, Documents & Actions...");
+      const analyzeRes = await fetch(`${backendBase}/api/documents/${docData.document_id}/analyze`, {
+        method: "POST",
+      });
+      if (analyzeRes.ok) {
+        const aData: NoticeAnalysisResult = await analyzeRes.json();
+        setAnalysisResult(aData);
+      }
+
+      loadLibrary();
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : "Failed to extract PDF.";
       setError(`Extraction error: ${errMsg}`);
@@ -155,11 +233,112 @@ export default function Home() {
     }
   };
 
+  const toggleAction = async (stepNumber: number) => {
+    if (!documentResult || !analysisResult) return;
+
+    try {
+      const res = await fetch(
+        `${backendBase}/api/documents/${documentResult.document_id}/actions/${stepNumber}`,
+        { method: "PATCH" }
+      );
+      if (res.ok) {
+        const updatedStep: ActionStep = await res.json();
+        setAnalysisResult((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            actions: prev.actions.map((a) =>
+              a.step_number === stepNumber ? updatedStep : a
+            ),
+          };
+        });
+      }
+    } catch {
+      // Local fallback toggle
+      setAnalysisResult((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          actions: prev.actions.map((a) =>
+            a.step_number === stepNumber ? { ...a, completed: !a.completed } : a
+          ),
+        };
+      });
+    }
+  };
+
+  const exportActionsMarkdown = () => {
+    if (!analysisResult) return;
+    let md = `# NoticeNap Action Checklist: ${analysisResult.filename}\n\n`;
+    md += `*Generated locally on ${analysisResult.generated_at} via ${analysisResult.ai_engine}*\n\n`;
+    md += `## Critical Dates & Deadlines\n`;
+    analysisResult.dates.forEach((d) => {
+      md += `- **${d.title}**: ${d.date_str} *(Page ${d.source_page})*\n`;
+    });
+    md += `\n## Required Documents\n`;
+    analysisResult.documents.forEach((doc) => {
+      md += `- [ ] ${doc.specification} *(Page ${doc.source_page})*\n`;
+    });
+    md += `\n## Sequential Next Steps\n`;
+    analysisResult.actions.forEach((a) => {
+      const check = a.completed ? "[x]" : "[ ]";
+      md += `- ${check} **Step ${a.step_number}: ${a.title}** — ${a.description} *(Page ${a.source_page})*\n`;
+    });
+
+    const blob = new Blob([md], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${analysisResult.filename.replace(/\.pdf$/i, "")}_checklist.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   const resetDesk = () => {
     setDocumentResult(null);
+    setAnalysisResult(null);
     setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
+
+  const selectDocFromLibrary = async (doc: DocumentExtractionResult) => {
+    setDocumentResult(doc);
+    setSelectedPage(1);
+    setActiveTab("analysis");
+    // Fetch or generate analysis
+    try {
+      const res = await fetch(`${backendBase}/api/documents/${doc.document_id}/analysis`);
+      if (res.ok) {
+        setAnalysisResult(await res.json());
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const deleteDocFromLibrary = async (docId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await fetch(`${backendBase}/api/documents/${docId}`, { method: "DELETE" });
+      if (documentResult?.document_id === docId) {
+        resetDesk();
+      }
+      loadLibrary();
+    } catch {
+      // ignore
+    }
+  };
+
+  // Calculations for action list progress
+  const totalActions = analysisResult?.actions.length || 0;
+  const completedActions = analysisResult?.actions.filter((a) => a.completed).length || 0;
+  const progressPercent = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+
+  const filteredActions = analysisResult?.actions.filter((a) => {
+    if (filterAction === "pending") return !a.completed;
+    if (filterAction === "completed") return a.completed;
+    return true;
+  }) || [];
 
   return (
     <div className="flex min-h-screen bg-surface font-sans text-on-surface antialiased">
@@ -200,12 +379,46 @@ export default function Home() {
               }`}
             >
               <span className="material-symbols-outlined text-[20px]">add_circle</span>
-              <span className="text-[14px]">New Analysis</span>
+              <span className="text-[14px]">The Calm Desk</span>
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("library")}
+              onClick={() => setActiveTab("analysis")}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
+                activeTab === "analysis"
+                  ? "bg-secondary-container text-on-secondary-fixed font-semibold"
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px]">analytics</span>
+              <span className="text-[14px]">Document Analysis</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("actions")}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
+                activeTab === "actions"
+                  ? "bg-secondary-container text-on-secondary-fixed font-semibold"
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[20px]">checklist</span>
+              <span className="text-[14px]">My Action List</span>
+              {totalActions > 0 && (
+                <span className="ml-auto text-[11px] font-mono px-1.5 py-0.5 bg-surface-container-lowest rounded-full text-secondary">
+                  {completedActions}/{totalActions}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab("library");
+                loadLibrary();
+              }}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
                 activeTab === "library"
                   ? "bg-secondary-container text-on-secondary-fixed font-semibold"
@@ -214,29 +427,17 @@ export default function Home() {
             >
               <span className="material-symbols-outlined text-[20px]">folder_open</span>
               <span className="text-[14px]">Document Library</span>
+              {libraryDocs.length > 0 && (
+                <span className="ml-auto text-[11px] font-mono px-1.5 py-0.5 bg-surface-container-lowest rounded-full text-secondary">
+                  {libraryDocs.length}
+                </span>
+              )}
             </button>
 
             <button
               type="button"
-              onClick={() => setActiveTab("checklists")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
-                activeTab === "checklists"
-                  ? "bg-secondary-container text-on-secondary-fixed font-semibold"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
-            >
-              <span className="material-symbols-outlined text-[20px]">checklist</span>
-              <span className="text-[14px]">Saved Checklists</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("settings")}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
-                activeTab === "settings"
-                  ? "bg-secondary-container text-on-secondary-fixed font-semibold"
-                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
-              }`}
+              onClick={() => setShowSettingsModal(true)}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
             >
               <span className="material-symbols-outlined text-[20px]">settings</span>
               <span className="text-[14px]">Settings</span>
@@ -273,7 +474,7 @@ export default function Home() {
         </div>
       </aside>
 
-      {/* 2. MAIN DESK WORKSPACE */}
+      {/* 2. MAIN WORKSPACE VIEWPORT */}
       <div className="pl-64 flex-1 flex flex-col min-w-0">
         {/* Top Header */}
         <header className="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-md shadow-[0_1px_0_0_#e1e4d9] z-40 px-8 flex items-center justify-between">
@@ -292,7 +493,10 @@ export default function Home() {
             </span>
             <span className="text-outline-variant font-mono text-[11px]">/</span>
             <span className="font-mono text-[11px] text-secondary uppercase tracking-wider">
-              Archival Workspace
+              {activeTab === "desk" && "Archival Workspace"}
+              {activeTab === "analysis" && "Notice Analysis Split View"}
+              {activeTab === "actions" && "My Action Checklist"}
+              {activeTab === "library" && "Archived Document Library"}
             </span>
           </div>
 
@@ -314,32 +518,10 @@ export default function Home() {
         </header>
 
         {/* Main Content Area */}
-        <main className="relative pt-24 pb-16 px-8 max-w-6xl mx-auto w-full flex flex-col gap-10">
-          {/* Top Title Area */}
-          <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
-            <div className="flex flex-col gap-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
-                <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-medium">
-                  Quiet Workspace
-                </span>
-              </div>
-              <h1 className="font-serif text-[32px] md:text-[38px] leading-tight text-on-surface tracking-tight font-normal">
-                One less thing to figure out.
-              </h1>
-              <p className="text-[16px] text-secondary leading-relaxed">
-                Drop in an official notice. Extract dates, eligibility criteria, and next steps without cloud processing.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 self-start md:self-end text-secondary font-mono text-[11px]">
-              <span className="material-symbols-outlined text-[16px] text-primary">lock</span>
-              <span>Local Ollama · 100% on device</span>
-            </div>
-          </section>
-
-          {/* Error Banner if any */}
+        <main className="relative pt-24 pb-16 px-8 max-w-6xl mx-auto w-full flex flex-col gap-8">
+          {/* Global Error Banner */}
           {error && (
-            <div className="p-4 rounded-lg bg-error-container text-on-error-container border border-error/20 flex items-center gap-3">
+            <div className="p-4 rounded-lg bg-error-container text-on-error-container border border-error/20 flex items-center gap-3 shadow-sm">
               <span className="material-symbols-outlined text-[20px] text-error">error</span>
               <p className="text-[14px] flex-1">{error}</p>
               <button
@@ -352,267 +534,692 @@ export default function Home() {
             </div>
           )}
 
-          {/* Primary Drop Zone */}
-          <section className="relative w-full">
-            <div
-              onDragEnter={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(true);
-              }}
-              onDragLeave={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsDragging(false);
-              }}
-              onDrop={handleDrop}
-              onClick={() => {
-                if (!documentResult && fileInputRef.current) {
-                  fileInputRef.current.click();
-                }
-              }}
-              className={`group relative rounded-xl bg-surface-container-lowest p-10 md:p-14 border transition-all duration-300 flex flex-col items-center text-center cursor-pointer shadow-sm ${
-                isDragging
-                  ? "border-primary bg-surface-container-high ring-2 ring-primary/20"
-                  : "border-outline-variant/60 hover:border-primary-container/80"
-              }`}
-            >
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    handleFileUpload(e.target.files[0]);
-                  }
-                }}
-              />
-
-              <div className="flex flex-col items-center max-w-xl gap-4">
-                <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary mb-1">
-                  <span className="material-symbols-outlined text-[28px]">
-                    {loading ? "sync" : "upload_file"}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <h2 className="font-serif text-[24px] font-medium text-on-surface">
-                    {loading ? loadingMessage : "Give that PDF a rest."}
-                  </h2>
-                  <p className="text-[14px] text-secondary">
-                    Drop a scholarship, recruitment, academic, or examination notice here.
+          {/* TAB 1: THE CALM DOCUMENT DESK (Screen 01) */}
+          {activeTab === "desk" && (
+            <>
+              {/* Header */}
+              <section className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
+                <div className="flex flex-col gap-2 max-w-2xl">
+                  <div className="flex items-center gap-2">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary" />
+                    <span className="font-mono text-[11px] uppercase tracking-widest text-secondary font-medium">
+                      Quiet Workspace
+                    </span>
+                  </div>
+                  <h1 className="font-serif text-[32px] md:text-[38px] leading-tight text-on-surface tracking-tight font-normal">
+                    One less thing to figure out.
+                  </h1>
+                  <p className="text-[16px] text-secondary leading-relaxed">
+                    Drop in an official notice. Extract dates, eligibility criteria, and next steps without cloud processing.
                   </p>
                 </div>
-
-                <div className="flex flex-col sm:flex-row items-center gap-3 pt-3">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-primary-container text-on-primary font-semibold text-[15px] hover:bg-primary transition-all duration-150 active:translate-y-[0.5px] shadow-sm disabled:opacity-50"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">add</span>
-                    <span>Choose a PDF</span>
-                  </button>
-                  <span className="text-[12px] text-secondary">or drag document onto desk</span>
+                <div className="flex items-center gap-2 self-start md:self-end text-secondary font-mono text-[11px]">
+                  <span className="material-symbols-outlined text-[16px] text-primary">lock</span>
+                  <span>Local Ollama · 100% on device</span>
                 </div>
+              </section>
 
-                <p className="font-mono text-[11px] text-secondary pt-2">
-                  PDF documents up to 50MB · Evaluated privately on localhost
-                </p>
-              </div>
-            </div>
-          </section>
+              {/* Primary Drop Zone */}
+              <section className="relative w-full">
+                <div
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }}
+                  onDrop={handleDrop}
+                  onClick={() => {
+                    if (!documentResult && fileInputRef.current) {
+                      fileInputRef.current.click();
+                    }
+                  }}
+                  className={`group relative rounded-xl bg-surface-container-lowest p-10 md:p-14 border transition-all duration-300 flex flex-col items-center text-center cursor-pointer shadow-sm ${
+                    isDragging
+                      ? "border-primary bg-surface-container-high ring-2 ring-primary/20"
+                      : "border-outline-variant/60 hover:border-primary-container/80"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleFileUpload(e.target.files[0]);
+                      }
+                    }}
+                  />
 
-          {/* ACTIVE EXTRACTION RESULT BLOTTER (When document processed) */}
-          {documentResult && (
-            <section className="rounded-xl bg-surface-container-lowest p-6 md:p-8 border border-outline-variant/70 shadow-sm flex flex-col gap-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/50 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
-                    <span className="material-symbols-outlined text-[24px]">picture_as_pdf</span>
+                  <div className="flex flex-col items-center max-w-xl gap-4">
+                    <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary mb-1">
+                      <span className="material-symbols-outlined text-[28px]">
+                        {loading ? "sync" : "upload_file"}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <h2 className="font-serif text-[24px] font-medium text-on-surface">
+                        {loading ? loadingMessage : "Give that PDF a rest."}
+                      </h2>
+                      <p className="text-[14px] text-secondary">
+                        Drop a scholarship, recruitment, academic, or examination notice here.
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center gap-3 pt-3">
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                        className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded bg-primary-container text-on-primary font-semibold text-[15px] hover:bg-primary transition-all duration-150 active:translate-y-[0.5px] shadow-sm disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">add</span>
+                        <span>Choose a PDF</span>
+                      </button>
+                      <span className="text-[12px] text-secondary">or drag document onto desk</span>
+                    </div>
+
+                    <p className="font-mono text-[11px] text-secondary pt-2">
+                      PDF documents up to 50MB · Evaluated privately on localhost
+                    </p>
                   </div>
-                  <div>
-                    <h3 className="font-serif text-[20px] font-semibold text-on-surface">
-                      {documentResult.filename}
-                    </h3>
-                    <div className="flex items-center gap-3 font-mono text-[11px] text-secondary">
-                      <span>{documentResult.page_count} Pages</span>
-                      <span>•</span>
-                      <span>{documentResult.total_words.toLocaleString()} Words</span>
-                      <span>•</span>
-                      <span>{(documentResult.file_size_bytes / 1024).toFixed(1)} KB</span>
+                </div>
+              </section>
+
+              {/* Extraction Blotter Summary when active */}
+              {documentResult && (
+                <section className="rounded-xl bg-surface-container-lowest p-6 border border-outline-variant/70 shadow-sm flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-outline-variant/50 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+                        <span className="material-symbols-outlined text-[24px]">picture_as_pdf</span>
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-[20px] font-semibold text-on-surface">
+                          {documentResult.filename}
+                        </h3>
+                        <div className="flex items-center gap-3 font-mono text-[11px] text-secondary">
+                          <span>{documentResult.page_count} Pages</span>
+                          <span>•</span>
+                          <span>{documentResult.total_words.toLocaleString()} Words</span>
+                          <span>•</span>
+                          <span>{(documentResult.file_size_bytes / 1024).toFixed(1)} KB</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab("analysis")}
+                        className="px-4 py-2 rounded bg-primary text-on-primary text-[13px] font-medium flex items-center gap-1.5 shadow-sm hover:bg-primary-container"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                        Open Full Analysis
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetDesk}
+                        className="px-3 py-2 text-[12px] rounded border border-outline-variant/70 text-secondary hover:bg-surface-container-low transition-colors"
+                      >
+                        Clear Desk
+                      </button>
                     </div>
                   </div>
-                </div>
+                </section>
+              )}
 
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[11px] text-secondary uppercase bg-surface-container-low px-2.5 py-1 rounded">
-                    SHA-256: {documentResult.sha256.slice(0, 10)}...
+              {/* 4 Key Facets breakdown */}
+              <section className="flex flex-col gap-5">
+                <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
+                  <span className="text-[11px] font-semibold tracking-wider uppercase text-secondary">
+                    Notice breakdown angles
                   </span>
-                  <button
-                    type="button"
-                    onClick={resetDesk}
-                    className="px-3 py-1 text-[12px] rounded border border-outline-variant/70 text-secondary hover:bg-surface-container-low transition-colors"
-                  >
-                    Clear Desk
-                  </button>
-                </div>
-              </div>
-
-              {/* Page Navigator & Extracted Text Preview */}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[11px] uppercase tracking-wider text-secondary font-medium">
-                    PyMuPDF Local Text Stream (Air-gapped)
-                  </span>
-                  {/* Page selector buttons */}
-                  <div className="flex items-center gap-1">
-                    {documentResult.pages.map((p) => (
-                      <button
-                        key={p.page_number}
-                        type="button"
-                        onClick={() => setSelectedPage(p.page_number)}
-                        className={`px-3 py-1 rounded text-[12px] font-mono transition-colors ${
-                          selectedPage === p.page_number
-                            ? "bg-primary text-on-primary font-semibold"
-                            : "bg-surface-container hover:bg-surface-container-high text-on-surface"
-                        }`}
-                      >
-                        Page {p.page_number}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="font-mono text-[11px] text-secondary">4 Key Facets</span>
                 </div>
 
-                {/* Page Content Display */}
-                {documentResult.pages.length > 0 && (
-                  <div className="p-5 rounded-lg bg-surface-container-low border border-outline-variant/40 font-mono text-[13px] leading-relaxed text-on-surface whitespace-pre-wrap max-h-80 overflow-y-auto">
-                    {documentResult.pages.find((p) => p.page_number === selectedPage)?.text ||
-                      "No selectable text found on this page."}
-                  </div>
-                )}
-              </div>
-            </section>
-          )}
-
-          {/* 3. WHAT NOTICE NAP WILL EXTRACT (4 Key Facets) */}
-          <section className="flex flex-col gap-5">
-            <div className="flex items-center justify-between border-b border-outline-variant/60 pb-3">
-              <span className="text-[11px] font-semibold tracking-wider uppercase text-secondary">
-                Notice breakdown angles
-              </span>
-              <span className="font-mono text-[11px] text-secondary">4 Key Facets</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-2">
-              <div className="flex flex-col gap-2">
-                <span className="font-mono text-[11px] text-secondary">01 / Dates</span>
-                <h3 className="text-[16px] font-semibold text-on-surface">Important Dates</h3>
-                <p className="text-[12px] text-secondary leading-relaxed">
-                  Deadlines, examination windows, and interview schedules extracted cleanly.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="font-mono text-[11px] text-secondary">02 / Eligibility</span>
-                <h3 className="text-[16px] font-semibold text-on-surface">Eligibility</h3>
-                <p className="text-[12px] text-secondary leading-relaxed">
-                  Age caps, degree benchmarks, percentage rules, and category stipulations.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="font-mono text-[11px] text-secondary">03 / Documents</span>
-                <h3 className="text-[16px] font-semibold text-on-surface">Required Documents</h3>
-                <p className="text-[12px] text-secondary leading-relaxed">
-                  Certificates, size specifications, format limitations, and attestations.
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <span className="font-mono text-[11px] text-secondary">04 / Actions</span>
-                <h3 className="text-[16px] font-semibold text-on-surface">Next Steps</h3>
-                <p className="text-[12px] text-secondary leading-relaxed">
-                  Sequential submission roadmap, registration portals, and fees.
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* 4. RECENT WORK EMPTY STATE (With Sloth Illustration) */}
-          {!documentResult && (
-            <section className="rounded-xl bg-surface-container-low p-8 md:p-10 shadow-[0_1px_4px_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-center gap-8 md:gap-12">
-              <div className="flex flex-col md:flex-row items-center gap-8 md:gap-10 w-full">
-                <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 flex items-center justify-center">
-                  <Image
-                    src="/sloth.png"
-                    alt="NoticeNap Sleepy Sloth Resting on Desk Paperwork"
-                    width={112}
-                    height={112}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-3 text-center md:text-left flex-1">
-                  <div className="flex flex-col gap-1">
-                    <span className="font-mono text-[11px] text-secondary uppercase font-medium">
-                      Desk Tray · Empty
-                    </span>
-                    <h3 className="font-serif text-[20px] font-semibold text-on-surface">
-                      No paperwork processed yet.
-                    </h3>
-                    <p className="text-[14px] text-secondary max-w-xl">
-                      Your actionable checklist and deadline reminders will appear here as soon as you analyze a document.
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 pt-2">
+                  <div className="flex flex-col gap-2">
+                    <span className="font-mono text-[11px] text-secondary">01 / Dates</span>
+                    <h3 className="text-[16px] font-semibold text-on-surface">Important Dates</h3>
+                    <p className="text-[12px] text-secondary leading-relaxed">
+                      Deadlines, examination windows, and interview schedules extracted cleanly.
                     </p>
                   </div>
 
-                  {/* Sample Notices Quick Chips */}
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
-                    <span className="text-[11px] font-semibold text-secondary">Sample notices:</span>
-                    <button
-                      type="button"
-                      onClick={() => loadSample("Rhodes_Scholarship_2025.pdf")}
-                      className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-[14px] text-primary">
-                        description
-                      </span>
-                      Rhodes Scholarship 2025
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => loadSample("Civil_Services_Exam_Notice.pdf")}
-                      className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-[14px] text-primary">
-                        description
-                      </span>
-                      Civil Services Exam Notice
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => loadSample("Research_Fellowship_PDF.pdf")}
-                      className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
-                    >
-                      <span className="material-symbols-outlined text-[14px] text-primary">
-                        description
-                      </span>
-                      Research Fellowship PDF
-                    </button>
+                  <div className="flex flex-col gap-2">
+                    <span className="font-mono text-[11px] text-secondary">02 / Eligibility</span>
+                    <h3 className="text-[16px] font-semibold text-on-surface">Eligibility</h3>
+                    <p className="text-[12px] text-secondary leading-relaxed">
+                      Age caps, degree benchmarks, percentage rules, and category stipulations.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="font-mono text-[11px] text-secondary">03 / Documents</span>
+                    <h3 className="text-[16px] font-semibold text-on-surface">Required Documents</h3>
+                    <p className="text-[12px] text-secondary leading-relaxed">
+                      Certificates, size specifications, format limitations, and attestations.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <span className="font-mono text-[11px] text-secondary">04 / Actions</span>
+                    <h3 className="text-[16px] font-semibold text-on-surface">Next Steps</h3>
+                    <p className="text-[12px] text-secondary leading-relaxed">
+                      Sequential submission roadmap, registration portals, and fees.
+                    </p>
                   </div>
                 </div>
+              </section>
+
+              {/* Empty state with Sloth Illustration */}
+              {!documentResult && (
+                <section className="rounded-xl bg-surface-container-low p-8 md:p-10 shadow-[0_1px_4px_rgba(0,0,0,0.02)] flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                  <div className="flex flex-col md:flex-row items-center gap-8 md:gap-10 w-full">
+                    <div className="flex-shrink-0 w-24 h-24 md:w-28 md:h-28 flex items-center justify-center">
+                      <Image
+                        src="/sloth.png"
+                        alt="NoticeNap Sleepy Sloth Resting on Desk Paperwork"
+                        width={112}
+                        height={112}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-3 text-center md:text-left flex-1">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-mono text-[11px] text-secondary uppercase font-medium">
+                          Desk Tray · Empty
+                        </span>
+                        <h3 className="font-serif text-[20px] font-semibold text-on-surface">
+                          No paperwork processed yet.
+                        </h3>
+                        <p className="text-[14px] text-secondary max-w-xl">
+                          Your actionable checklist and deadline reminders will appear here as soon as you analyze a document.
+                        </p>
+                      </div>
+
+                      {/* Sample Notices Quick Chips */}
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                        <span className="text-[11px] font-semibold text-secondary">Sample notices:</span>
+                        <button
+                          type="button"
+                          onClick={() => loadSample("Rhodes_Scholarship_2025.pdf")}
+                          className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-[14px] text-primary">
+                            description
+                          </span>
+                          Rhodes Scholarship 2025
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => loadSample("Civil_Services_Exam_Notice.pdf")}
+                          className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-[14px] text-primary">
+                            description
+                          </span>
+                          Civil Services Exam Notice
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => loadSample("Research_Fellowship_PDF.pdf")}
+                          className="px-3 py-1 rounded-full bg-surface-container-lowest hover:bg-secondary-container transition-colors text-on-surface font-mono text-[11px] border border-outline-variant/60 flex items-center gap-1.5"
+                        >
+                          <span className="material-symbols-outlined text-[14px] text-primary">
+                            description
+                          </span>
+                          Research Fellowship PDF
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+
+          {/* TAB 2: DOCUMENT ANALYSIS (Screen 02) */}
+          {activeTab === "analysis" && (
+            <div className="flex flex-col gap-6">
+              {!documentResult ? (
+                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[28px]">search</span>
+                  </div>
+                  <h3 className="font-serif text-[22px] text-on-surface">No notice selected for analysis</h3>
+                  <p className="text-[14px] text-secondary max-w-md">
+                    Please upload a notice on the desk or choose an archived document from your library.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("desk")}
+                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                  >
+                    Go to Calm Desk
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  {/* Left Column: Raw Document Page Viewer */}
+                  <div className="lg:col-span-5 flex flex-col gap-4 sticky top-24">
+                    <div className="p-4 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-3">
+                      <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-primary text-[20px]">
+                            description
+                          </span>
+                          <span className="font-serif font-medium text-[16px] truncate max-w-[200px]">
+                            {documentResult.filename}
+                          </span>
+                        </div>
+                        <span className="font-mono text-[11px] text-secondary">
+                          Page {selectedPage} of {documentResult.page_count}
+                        </span>
+                      </div>
+
+                      {/* Page Buttons */}
+                      <div className="flex flex-wrap gap-1">
+                        {documentResult.pages.map((p) => (
+                          <button
+                            key={p.page_number}
+                            type="button"
+                            onClick={() => setSelectedPage(p.page_number)}
+                            className={`px-3 py-1 rounded text-[12px] font-mono transition-colors ${
+                              selectedPage === p.page_number
+                                ? "bg-primary text-on-primary font-semibold"
+                                : "bg-surface-container hover:bg-surface-container-high text-on-surface"
+                            }`}
+                          >
+                            Page {p.page_number}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Page Text Stream */}
+                      <div className="p-4 rounded-lg bg-surface-container-low border border-outline-variant/40 font-mono text-[12px] leading-relaxed text-on-surface whitespace-pre-wrap max-h-[500px] overflow-y-auto">
+                        {documentResult.pages.find((p) => p.page_number === selectedPage)?.text ||
+                          "No selectable text on this page."}
+                      </div>
+
+                      <div className="text-[11px] font-mono text-secondary text-right">
+                        Air-gapped PyMuPDF page stream
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Structured Facets */}
+                  <div className="lg:col-span-7 flex flex-col gap-6">
+                    {/* Summary Card */}
+                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-[11px] uppercase tracking-wider text-secondary font-medium">
+                          Analysis Overview
+                        </span>
+                        <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-primary">
+                          {analysisResult?.ai_engine || "deterministic-extractor"}
+                        </span>
+                      </div>
+                      <p className="text-[14px] text-on-surface leading-relaxed">
+                        {analysisResult?.summary || "Analysis in progress..."}
+                      </p>
+                    </div>
+
+                    {/* 1. Dates Facet */}
+                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                      <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
+                        <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[20px] text-primary">
+                            calendar_today
+                          </span>
+                          Critical Dates & Deadlines
+                        </h4>
+                        <span className="font-mono text-[11px] text-secondary">
+                          {analysisResult?.dates.length || 0} Identified
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-2.5">
+                        {analysisResult?.dates.map((d, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedPage(d.source_page)}
+                            className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer flex items-center justify-between border border-outline-variant/30"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-[14px] font-medium text-on-surface">
+                                {d.title}
+                              </span>
+                              <span className="font-mono text-[12px] text-secondary">
+                                {d.date_str}
+                              </span>
+                            </div>
+                            <span className="font-mono text-[11px] px-2 py-1 rounded bg-surface-container-lowest text-primary border border-outline-variant/40">
+                              Page {d.source_page}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 2. Eligibility Benchmarks */}
+                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                      <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
+                        <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[20px] text-primary">
+                            verified_user
+                          </span>
+                          Eligibility Stipulations
+                        </h4>
+                        <span className="font-mono text-[11px] text-secondary">
+                          {analysisResult?.eligibility.length || 0} Benchmarks
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-2.5">
+                        {analysisResult?.eligibility.map((e, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedPage(e.source_page)}
+                            className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer flex items-center justify-between border border-outline-variant/30"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="material-symbols-outlined text-[16px] text-primary">
+                                check_circle
+                              </span>
+                              <span className="text-[13px] text-on-surface">{e.requirement}</span>
+                            </div>
+                            <span className="font-mono text-[11px] px-2 py-1 rounded bg-surface-container-lowest text-primary border border-outline-variant/40 shrink-0">
+                              Page {e.source_page}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3. Required Documents */}
+                    <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                      <div className="flex items-center justify-between border-b border-outline-variant/40 pb-2">
+                        <h4 className="font-serif text-[18px] font-semibold text-on-surface flex items-center gap-2">
+                          <span className="material-symbols-outlined text-[20px] text-primary">
+                            folder
+                          </span>
+                          Required Documents Checklist
+                        </h4>
+                        <span className="font-mono text-[11px] text-secondary">
+                          {analysisResult?.documents.length || 0} Items
+                        </span>
+                      </div>
+
+                      <div className="flex flex-col gap-2.5">
+                        {analysisResult?.documents.map((d, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedPage(d.source_page)}
+                            className="p-3 rounded-lg bg-surface-container-low hover:bg-surface-container transition-colors cursor-pointer flex items-center justify-between border border-outline-variant/30"
+                          >
+                            <span className="text-[13px] text-on-surface">{d.specification}</span>
+                            <span className="font-mono text-[11px] px-2 py-1 rounded bg-surface-container-lowest text-primary border border-outline-variant/40 shrink-0">
+                              Page {d.source_page}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: MY ACTION LIST (Screen 03) */}
+          {activeTab === "actions" && (
+            <div className="flex flex-col gap-6">
+              {!analysisResult ? (
+                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[28px]">checklist</span>
+                  </div>
+                  <h3 className="font-serif text-[22px] text-on-surface">No action list generated yet</h3>
+                  <p className="text-[14px] text-secondary max-w-md">
+                    Process an official notice on the calm desk to generate your custom step-by-step checklist.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("desk")}
+                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                  >
+                    Go to Calm Desk
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-6">
+                  {/* Progress Header Card */}
+                  <div className="p-6 rounded-xl bg-surface-container-lowest border border-outline-variant/60 shadow-sm flex flex-col gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <span className="font-mono text-[11px] text-secondary uppercase">
+                          Action Checklist · {analysisResult.filename}
+                        </span>
+                        <h2 className="font-serif text-[24px] text-on-surface font-semibold">
+                          Your Streamlined Next Steps
+                        </h2>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={exportActionsMarkdown}
+                        className="px-4 py-2 rounded bg-surface-container-low hover:bg-secondary-container transition-colors text-primary font-mono text-[12px] flex items-center gap-1.5 border border-outline-variant/60 self-start sm:self-auto"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">download</span>
+                        Export Checklist (.md)
+                      </button>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="flex flex-col gap-1.5 pt-2">
+                      <div className="flex items-center justify-between text-[12px] font-mono text-secondary">
+                        <span>Progress: {completedActions} of {totalActions} tasks completed</span>
+                        <span>{progressPercent}%</span>
+                      </div>
+                      <div className="w-full h-2 rounded-full bg-surface-container-low overflow-hidden">
+                        <div
+                          className="h-full bg-primary transition-all duration-300 rounded-full"
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Filter Pills */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-outline-variant/30">
+                      <button
+                        type="button"
+                        onClick={() => setFilterAction("all")}
+                        className={`px-3 py-1 rounded text-[12px] font-mono transition-colors ${
+                          filterAction === "all"
+                            ? "bg-primary text-on-primary font-semibold"
+                            : "bg-surface-container-low hover:bg-surface-container text-secondary"
+                        }`}
+                      >
+                        All ({totalActions})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFilterAction("pending")}
+                        className={`px-3 py-1 rounded text-[12px] font-mono transition-colors ${
+                          filterAction === "pending"
+                            ? "bg-primary text-on-primary font-semibold"
+                            : "bg-surface-container-low hover:bg-surface-container text-secondary"
+                        }`}
+                      >
+                        Pending ({totalActions - completedActions})
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFilterAction("completed")}
+                        className={`px-3 py-1 rounded text-[12px] font-mono transition-colors ${
+                          filterAction === "completed"
+                            ? "bg-primary text-on-primary font-semibold"
+                            : "bg-surface-container-low hover:bg-surface-container text-secondary"
+                        }`}
+                      >
+                        Completed ({completedActions})
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Tasks List */}
+                  <div className="flex flex-col gap-3">
+                    {filteredActions.map((action) => (
+                      <div
+                        key={action.step_number}
+                        onClick={() => toggleAction(action.step_number)}
+                        className={`p-5 rounded-xl border transition-all cursor-pointer flex items-start gap-4 ${
+                          action.completed
+                            ? "bg-surface-container-low/60 border-outline-variant/40 opacity-75"
+                            : "bg-surface-container-lowest border-outline-variant/70 shadow-sm hover:border-primary-container"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={action.completed}
+                          onChange={() => {}}
+                          className="mt-1 h-5 w-5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                        />
+
+                        <div className="flex-1 flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span
+                              className={`text-[15px] font-medium ${
+                                action.completed
+                                  ? "line-through text-secondary"
+                                  : "text-on-surface"
+                              }`}
+                            >
+                              Step {action.step_number}: {action.title}
+                            </span>
+                            <span className="font-mono text-[11px] px-2 py-0.5 rounded bg-surface-container-low text-primary border border-outline-variant/40">
+                              Page {action.source_page}
+                            </span>
+                          </div>
+                          <p
+                            className={`text-[13px] leading-relaxed ${
+                              action.completed ? "text-secondary" : "text-secondary"
+                            }`}
+                          >
+                            {action.description}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 4: DOCUMENT LIBRARY (Screen 04) */}
+          {activeTab === "library" && (
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-outline-variant/40">
+                <div>
+                  <h2 className="font-serif text-[28px] text-on-surface font-semibold">
+                    Document Library
+                  </h2>
+                  <p className="text-[14px] text-secondary">
+                    Your archival desk tray with historical notice breakdowns.
+                  </p>
+                </div>
+                {/* Search Bar */}
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchLibrary}
+                    onChange={(e) => setSearchLibrary(e.target.value)}
+                    placeholder="Filter library notices..."
+                    className="pl-9 pr-4 py-2 rounded-lg bg-surface-container-lowest border border-outline-variant/60 text-[13px] text-on-surface focus:outline-none focus:border-primary"
+                  />
+                  <span className="material-symbols-outlined absolute left-2.5 top-2.5 text-[18px] text-secondary">
+                    search
+                  </span>
+                </div>
               </div>
-            </section>
+
+              {libraryDocs.length === 0 ? (
+                <div className="p-12 text-center rounded-xl bg-surface-container-lowest border border-outline-variant/60 flex flex-col items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+                    <span className="material-symbols-outlined text-[28px]">folder_open</span>
+                  </div>
+                  <h3 className="font-serif text-[22px] text-on-surface">No documents archived yet</h3>
+                  <p className="text-[14px] text-secondary max-w-md">
+                    Notices extracted on the desk will automatically be archived in your private local library.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("desk")}
+                    className="px-6 py-2.5 rounded bg-primary-container text-on-primary text-[14px] font-semibold"
+                  >
+                    Process First Notice
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {libraryDocs
+                    .filter((d) => d.filename.toLowerCase().includes(searchLibrary.toLowerCase()))
+                    .map((doc) => (
+                      <div
+                        key={doc.document_id}
+                        onClick={() => selectDocFromLibrary(doc)}
+                        className="group p-5 rounded-xl bg-surface-container-lowest border border-outline-variant/60 hover:border-primary shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col justify-between gap-4"
+                      >
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="font-mono text-[10px] text-secondary uppercase">
+                              {doc.page_count} Pages · {(doc.file_size_bytes / 1024).toFixed(0)} KB
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => deleteDocFromLibrary(doc.document_id, e)}
+                              className="text-secondary hover:text-error transition-colors"
+                              title="Delete notice"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </div>
+                          <h3 className="font-serif text-[17px] font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-2">
+                            {doc.filename}
+                          </h3>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-outline-variant/30">
+                          <span className="font-mono text-[11px] text-secondary">
+                            SHA: {doc.sha256.slice(0, 8)}...
+                          </span>
+                          <span className="text-[12px] text-primary font-medium flex items-center gap-1">
+                            Inspect
+                            <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* 5. TRUST AND TRACEABILITY BANNER */}
@@ -636,6 +1243,103 @@ export default function Home() {
           </footer>
         </main>
       </div>
+
+      {/* 3. SETTINGS MODAL */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-container-lowest rounded-2xl max-w-md w-full p-6 shadow-xl border border-outline-variant/60 flex flex-col gap-6">
+            <div className="flex items-center justify-between border-b border-outline-variant/40 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-[22px]">settings</span>
+                <h3 className="font-serif text-[20px] font-semibold text-on-surface">
+                  NoticeNap Settings
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="text-secondary hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-[20px]">close</span>
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-on-surface">
+                  Local Ollama Host
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={ollamaStatus.ollama_host}
+                  className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/60 font-mono text-[13px] text-secondary cursor-not-allowed"
+                />
+                <span className="text-[11px] text-secondary">
+                  Configure via NOTICENAP_OLLAMA_HOST in .env
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[13px] font-semibold text-on-surface">
+                  Configured AI Model
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={ollamaStatus.configured_model}
+                  className="px-3 py-2 rounded-lg bg-surface-container-low border border-outline-variant/60 font-mono text-[13px] text-secondary cursor-not-allowed"
+                />
+                <span className="text-[11px] text-secondary">
+                  Recommended: Gemma 2 (9B/2B) for fast local summarization
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-surface-container-low border border-outline-variant/40 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] text-secondary uppercase font-medium">
+                    Daemon Connectivity
+                  </span>
+                  <button
+                    type="button"
+                    onClick={checkStatus}
+                    className="text-[11px] font-mono text-primary underline"
+                  >
+                    Test Probe
+                  </button>
+                </div>
+                <div className="font-mono text-[12px] text-on-surface flex items-center gap-2">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      ollamaStatus.connected ? "bg-primary" : "bg-tertiary-fixed-dim"
+                    }`}
+                  />
+                  {ollamaStatus.status_message}
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-lg bg-surface-container border border-outline-variant/30 flex items-start gap-2.5 text-secondary">
+                <span className="material-symbols-outlined text-[18px] text-primary shrink-0 mt-0.5">
+                  shield
+                </span>
+                <p className="text-[12px] leading-relaxed">
+                  NoticeNap never transmits document contents outside localhost. All extractions and analyses happen 100% on this machine.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                type="button"
+                onClick={() => setShowSettingsModal(false)}
+                className="px-5 py-2 rounded bg-primary text-on-primary text-[13px] font-semibold hover:bg-primary-container transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

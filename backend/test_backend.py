@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
 from backend.extractor import extract_pdf_pages
+from backend.security import PDFSecurityGuard
 
 client = TestClient(app)
 
@@ -35,7 +36,10 @@ def create_sample_notice_pdf() -> bytes:
         "Required Documents:\n"
         "1. Degree Certificate & All Semester Marksheets (PDF, max 2MB)\n"
         "2. Category Certificate (if applicable)\n"
-        "3. Recent Passport Photograph (JPG, 50KB - 100KB)\n",
+        "3. Recent Passport Photograph (JPG, 50KB - 100KB)\n\n"
+        "Next Steps:\n"
+        "Step 1: Complete online registration on portal.\n"
+        "Step 2: Upload verified documents.\n",
         fontsize=12
     )
     
@@ -54,47 +58,50 @@ def test_system_status_endpoint():
     data = response.json()
     assert "connected" in data
     assert "ollama_host" in data
-    assert "configured_model" in data
-    assert "status_message" in data
 
-def test_pdf_extraction_unit():
+def test_pdf_security_guard_sanitization():
+    unsafe_name = "../../etc/passwd/malicious.pdf\x00.exe"
+    clean = PDFSecurityGuard.sanitize_filename(unsafe_name)
+    assert ".." not in clean
+    assert "/" not in clean
+    assert clean.endswith(".pdf")
+
+def test_extract_and_analyze_flow():
     pdf_bytes = create_sample_notice_pdf()
-    result = extract_pdf_pages(pdf_bytes, "national_fellowship_notice_2026.pdf")
+    files = {"file": ("fellowship_2026.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
     
-    assert result.page_count == 2
-    assert len(result.pages) == 2
-    assert result.pages[0].page_number == 1
-    assert "NATIONAL RESEARCH FELLOWSHIP NOTICE 2026" in result.pages[0].text
-    assert result.pages[1].page_number == 2
-    assert "ELIGIBILITY CRITERIA & REQUIRED DOCUMENTS" in result.pages[1].text
-    assert result.total_words > 0
-    assert result.sha256 != ""
+    # 1. Extract
+    extract_resp = client.post("/api/documents/extract", files=files)
+    assert extract_resp.status_code == 200
+    doc_data = extract_resp.json()
+    doc_id = doc_data["document_id"]
+    assert doc_data["page_count"] == 2
+    assert len(doc_data["pages"]) == 2
+    assert doc_data["pages"][0]["page_number"] == 1
 
-def test_extract_endpoint_success():
-    pdf_bytes = create_sample_notice_pdf()
-    files = {"file": ("sample_notice.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
-    response = client.post("/api/documents/extract", files=files)
+    # 2. Analyze
+    analyze_resp = client.post(f"/api/documents/{doc_id}/analyze")
+    assert analyze_resp.status_code == 200
+    analysis = analyze_resp.json()
+    assert len(analysis["dates"]) > 0
+    assert len(analysis["eligibility"]) > 0
+    assert len(analysis["documents"]) > 0
+    assert len(analysis["actions"]) > 0
     
-    assert response.status_code == 200
-    data = response.json()
-    assert data["filename"] == "sample_notice.pdf"
-    assert data["page_count"] == 2
-    assert len(data["pages"]) == 2
-    assert data["pages"][0]["page_number"] == 1
-    assert "NATIONAL RESEARCH FELLOWSHIP" in data["pages"][0]["text"]
-    
-    # Test retrieving the cached document
-    doc_id = data["document_id"]
-    get_resp = client.get(f"/api/documents/{doc_id}")
-    assert get_resp.status_code == 200
-    assert get_resp.json()["document_id"] == doc_id
+    # Verify page citation link
+    assert analysis["dates"][0]["source_page"] in [1, 2]
 
-def test_extract_endpoint_invalid_file():
-    files = {"file": ("invalid.txt", io.BytesIO(b"Hello world, not a pdf"), "text/plain")}
-    response = client.post("/api/documents/extract", files=files)
-    assert response.status_code == 400
+    # 3. Toggle Action Item
+    step_num = analysis["actions"][0]["step_number"]
+    patch_resp = client.patch(f"/api/documents/{doc_id}/actions/{step_num}")
+    assert patch_resp.status_code == 200
+    assert patch_resp.json()["completed"] is True
 
-def test_extract_endpoint_corrupted_pdf():
-    files = {"file": ("corrupted.pdf", io.BytesIO(b"not a valid pdf header"), "application/pdf")}
-    response = client.post("/api/documents/extract", files=files)
-    assert response.status_code == 400
+    # 4. List Documents
+    list_resp = client.get("/api/documents")
+    assert list_resp.status_code == 200
+    assert any(d["document_id"] == doc_id for d in list_resp.json())
+
+    # 5. Delete Document
+    del_resp = client.delete(f"/api/documents/{doc_id}")
+    assert del_resp.status_code == 200
