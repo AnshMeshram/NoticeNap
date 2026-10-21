@@ -1,0 +1,285 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1.0" name="viewport"><meta content="web_dashboard" name="shell-type"><link href="https://fonts.googleapis.com" rel="preconnect"><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"><link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&amp;family=Manrope:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&amp;display=swap" rel="stylesheet"><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{"colors":{"on-secondary":"#ffffff","inverse-on-surface":"#eff2e7","secondary-fixed":"#dde6d3","secondary-container":"#dae3d0","on-secondary-container":"#5d6556","surface-container-highest":"#e1e4d9","outline":"#717973","surface-container-high":"#e6e9de","secondary":"#586152","surface-container-low":"#f2f5ea","on-tertiary-fixed":"#271900","tertiary":"#402c00","background":"#f8fbef","tertiary-container":"#5c4100","on-tertiary-fixed-variant":"#5e4200","surface-bright":"#f8fbef","on-error":"#ffffff","on-tertiary":"#ffffff","primary":"#0a3626","on-primary":"#ffffff","primary-container":"#244d3b","on-secondary-fixed":"#161e12","surface-dim":"#d8dbd1","surface-variant":"#e1e4d9","on-primary-container":"#91bda6","secondary-fixed-dim":"#c0c9b7","on-primary-fixed":"#002114","surface-container":"#ecefe4","surface-container-lowest":"#ffffff","tertiary-fixed":"#ffdea7","outline-variant":"#c1c8c2","on-background":"#191d16","tertiary-fixed-dim":"#f0bf63","inverse-primary":"#a4d0b9","inverse-surface":"#2e322a","on-error-container":"#93000a","error-container":"#ffdad6","surface-tint":"#3e6753","primary-fixed-dim":"#a4d0b9","primary-fixed":"#bfedd4","on-secondary-fixed-variant":"#41493b","on-primary-fixed-variant":"#254e3c","on-tertiary-container":"#dbac53","error":"#ba1a1a","surface":"#f8fbef","on-surface":"#191d16","on-surface-variant":"#414944"},"borderRadius":{"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},"spacing":{"gutter":"1.5rem","space-md":"1rem","gutter-compact":"0.75rem","margin-docked":"1rem","space-xs":"0.25rem","margin":"2rem","space-sm":"0.5rem","space-lg":"1.5rem","space-xl":"2.5rem"},"fontFamily":{"body-md":["Manrope"],"title-md":["Manrope"],"headline-lg":["Newsreader"],"display-lg":["Newsreader"],"label-lg":["Manrope"],"headline-md":["Newsreader"],"display-md":["Newsreader"],"label-mono":["JetBrains Mono"],"label-md":["Manrope"],"headline-sm":["Newsreader"],"body-lg":["Manrope"],"body-sm":["Manrope"]},"fontSize":{"body-md":["14px",{"lineHeight":"22px","fontWeight":"400"}],"title-md":["16px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg":["30px",{"lineHeight":"38px","letterSpacing":"-0.01em","fontWeight":"500"}],"display-lg":["48px",{"lineHeight":"56px","letterSpacing":"-0.02em","fontWeight":"400"}],"label-lg":["13px",{"lineHeight":"18px","letterSpacing":"0.01em","fontWeight":"600"}],"headline-md":["24px",{"lineHeight":"32px","letterSpacing":"-0.005em","fontWeight":"500"}],"display-md":["38px",{"lineHeight":"46px","letterSpacing":"-0.015em","fontWeight":"400"}],"label-mono":["11px",{"lineHeight":"16px","letterSpacing":"0.02em","fontWeight":"500"}],"label-md":["11px",{"lineHeight":"16px","letterSpacing":"0.04em","fontWeight":"600"}],"headline-sm":["20px",{"lineHeight":"28px","fontWeight":"600"}],"body-lg":["16px",{"lineHeight":"26px","fontWeight":"400"}],"body-sm":["12px",{"lineHeight":"18px","fontWeight":"400"}]}}}}</script></head><body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen selection:bg-secondary-fixed selection:text-on-secondary-fixed"><aside class="fixed left-0 top-0 h-full w-64 bg-surface-container-low shadow-[1px_0_0_0_#e1e4d9] z-50 flex flex-col justify-between py-6 px-4"><div class="flex flex-col gap-6"><div class="px-2 flex flex-col gap-2"><div class="flex items-center gap-3"><img alt="NoticeNap Wordmark &amp; Logo Mark" class="h-8 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1V2FN0MCT1B_z7XAAam-qkj0E3s7WQ2RZhkGzsW0H0uK0zkPoWTzOnoyzotUGJz4rDRIT5cZDg5L1yH7C2NvkF4oEFR-LqtkViD1JQ7wyP3wSVtLX_M7PNzv0DRm_uEFpuoFR9HD6p9FvSBMgajGM4s1qNkrmNAZrN3TlnwMdsylUPB-j-TlMPreImbhqfwEkzHXgN-OWbWwbojVteFjkrqFx9Ea2K2i-lULkWw7RhLCz1yHuIhpzYieLY"><span class="font-headline-sm text-headline-sm text-primary font-serif tracking-tight">NoticeNap</span></div><p class="font-headline-sm text-body-sm italic text-secondary pl-0.5">Let the notice be long.</p></div><nav class="flex flex-col gap-1.5" data-active-classes="bg-secondary-container text-on-secondary-fixed font-title-md"><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="new-analysis" href="#"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: &quot;FILL&quot; 0;">add_circle</span><span class="">New Analysis</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-secondary-container text-on-secondary-fixed font-title-md transition-colors shadow-sm" data-path="document-library" href="#"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: &quot;FILL&quot; 1;">folder_open</span><span class="">Document Library</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="saved-checklists" href="#"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: &quot;FILL&quot; 0;">checklist</span><span class="">Saved Checklists</span></a><a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md" data-path="settings" href="#"><span class="material-symbols-outlined text-[20px]" style="font-variation-settings: &quot;FILL&quot; 0;">settings</span><span class="">Settings</span></a></nav></div><div class="p-3 bg-surface-container rounded-lg shadow-[0_1px_4px_rgba(0,0,0,0.03)] flex flex-col gap-2.5"><div class="flex items-center justify-between"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span><span class="font-label-mono text-label-mono text-on-surface-variant uppercase">Ollama: Unconnected</span></div><a class="font-label-mono text-label-mono text-primary underline underline-offset-2 hover:text-primary-container transition-colors" data-path="settings" href="#">Configure</a></div><div class="font-label-mono text-label-mono text-secondary truncate">localhost:11434 • offline</div></div></aside><div class="pl-64"><header class="fixed top-0 left-64 right-0 h-16 bg-surface/85 backdrop-blur-md shadow-[0_1px_0_0_#e1e4d9] z-40 px-gutter flex items-center justify-between"><div class="flex items-center gap-3"><img alt="NoticeNap Wordmark &amp; Logo Mark" class="h-6 w-auto object-contain" src="https://lh3.googleusercontent.com/aida/AEtjO1V2FN0MCT1B_z7XAAam-qkj0E3s7WQ2RZhkGzsW0H0uK0zkPoWTzOnoyzotUGJz4rDRIT5cZDg5L1yH7C2NvkF4oEFR-LqtkViD1JQ7wyP3wSVtLX_M7PNzv0DRm_uEFpuoFR9HD6p9FvSBMgajGM4s1qNkrmNAZrN3TlnwMdsylUPB-j-TlMPreImbhqfwEkzHXgN-OWbWwbojVteFjkrqFx9Ea2K2i-lULkWw7RhLCz1yHuIhpzYieLY"><span class="font-title-md text-title-md text-primary font-medium tracking-tight">Desk Blotter</span><span class="text-outline-variant font-label-mono text-label-mono">/</span><span class="font-label-mono text-label-mono text-secondary uppercase tracking-wider">Archival Workspace</span></div><div class="flex items-center gap-4"><div class="flex items-center gap-2 px-3 py-1 bg-surface-container-low rounded-full shadow-[0_0_0_1px_#e1e4d9]"><span class="w-1.5 h-1.5 rounded-full bg-secondary-fixed-dim"></span><span class="font-label-mono text-label-mono text-secondary">INFERENCE: STANDBY</span></div><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></header><main class="relative pt-16 bg-surface min-h-screen"><div class="flex flex-col w-full">
+<!-- Interactive Style Shim & State Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+      // Synchronize App Shell Sidebar Active State
+      const currentNavLinks = document.querySelectorAll('aside nav a');
+      currentNavLinks.forEach(link => {
+        if (link.getAttribute('data-path') === 'document-library') {
+          link.className = "flex items-center gap-3 px-3 py-2.5 rounded-lg bg-secondary-container text-on-secondary-fixed font-title-md transition-colors shadow-sm";
+          const icon = link.querySelector('.material-symbols-outlined');
+          if (icon) icon.style.fontVariationSettings = "'FILL' 1";
+        } else {
+          link.className = "flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors font-body-md text-body-md";
+          const icon = link.querySelector('.material-symbols-outlined');
+          if (icon) icon.style.fontVariationSettings = "'FILL' 0";
+        }
+      });
+    });
+
+    function toggleEmptyStateDrawer() {
+      const drawer = document.getElementById('empty-state-preview-drawer');
+      const icon = document.getElementById('drawer-toggle-icon');
+      if (drawer.classList.contains('hidden')) {
+        drawer.classList.remove('hidden');
+        icon.innerText = 'expand_less';
+      } else {
+        drawer.classList.add('hidden');
+        icon.innerText = 'visibility';
+      }
+    }
+
+    function filterRows(category) {
+      const pills = document.querySelectorAll('.filter-pill');
+      pills.forEach(p => {
+        p.classList.remove('bg-primary', 'text-on-primary');
+        p.classList.add('bg-surface-container-high', 'text-secondary');
+      });
+      event.currentTarget.classList.remove('bg-surface-container-high', 'text-secondary');
+      event.currentTarget.classList.add('bg-primary', 'text-on-primary');
+    }
+  </script>
+<!-- Workspace Canvas -->
+<div class="px-space-xl py-space-lg flex flex-col gap-space-xl max-w-[1400px] w-full mx-auto">
+<!-- Top Editorial Header & Ambient Scribe Status -->
+<header class="flex flex-col lg:flex-row lg:items-end justify-between gap-space-lg">
+<div class="flex flex-col gap-space-xs max-w-2xl">
+<div class="flex items-center gap-3">
+<span class="font-label-mono text-label-mono uppercase tracking-widest text-secondary font-medium">
+            Your Documents • Archival Workspace
+          </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-label-mono bg-surface-container-high text-on-surface-variant shadow-sm">
+            SAMPLE LIBRARY • LOCAL REPOSITORY
+          </span>
+</div>
+<h1 class="font-headline-lg text-headline-lg text-on-surface text-balance font-serif mt-1">
+          Everything important, in its place.
+        </h1>
+<p class="font-body-lg text-body-lg text-secondary text-pretty">
+          Find a notice, revisit its contextual evidence, or pick up where the local scribe left off.
+        </p>
+</div>
+<!-- Quick Context Stat Pill -->
+<div class="flex items-center gap-3 bg-surface-container-low px-4 py-2.5 rounded-full shadow-sm self-start lg:self-auto">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="font-label-mono text-label-mono text-on-surface">4 Notices Cataloged</span>
+</div>
+<span class="text-outline-variant font-label-mono">•</span>
+<span class="font-label-mono text-label-mono text-secondary">Local SSD Storage: 5.46 MB</span>
+</div>
+</header>
+<!-- Top Action Row: Search, Filters & Ingestion CTA -->
+<section class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pb-2">
+  <div class="relative flex-1 max-w-md">
+    <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-secondary text-[18px]">search</span>
+    <input class="w-full bg-surface-container-lowest border border-outline-variant/60 text-on-surface font-body-md text-body-sm pl-10 pr-4 py-2 rounded-lg focus:outline-none focus:border-primary transition-all placeholder:text-outline" placeholder="Search archives by title, tag, or cite..." type="text">
+  </div>
+  <div class="flex items-center gap-2 overflow-x-auto">
+    <div class="inline-flex items-center gap-1 p-0.5 bg-surface-container-low rounded-lg">
+      <button class="px-3 py-1.5 rounded text-label-mono font-medium text-body-sm bg-surface-container-lowest text-primary shadow-sm">All (4)</button>
+      <button class="px-3 py-1.5 rounded text-label-mono font-medium text-body-sm text-secondary hover:text-on-surface transition-colors">Ready</button>
+      <button class="px-3 py-1.5 rounded text-label-mono font-medium text-body-sm text-secondary hover:text-on-surface transition-colors">Needs Review</button>
+    </div>
+    <button class="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary font-title-md text-body-sm rounded-lg hover:bg-primary-container transition-all active:translate-y-[0.5px] shadow-sm ml-auto sm:ml-2 shrink-0">
+      <span class="material-symbols-outlined text-[16px]">add</span>
+      <span class="">Analyze PDF</span>
+    </button>
+  </div>
+</section>
+<!-- Main Editorial Document Registry (Editorial Reading Table) -->
+<section class="flex flex-col bg-surface-container-lowest rounded-xl border border-outline-variant/40 shadow-sm overflow-hidden">
+  <!-- Table Header Bar -->
+  <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-surface-container-low/70 border-b border-outline-variant/30 font-label-mono text-label-mono text-secondary uppercase tracking-wider items-center">
+    <div class="col-span-6 md:col-span-5">Document &amp; Category</div>
+    <div class="hidden md:block md:col-span-3">Provenance</div>
+    <div class="col-span-4 md:col-span-2">Status</div>
+    <div class="col-span-2 text-right">Actions</div>
+  </div>
+
+  <!-- DOCUMENT ROW 01 -->
+  <article class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface-container-lowest hover:bg-surface-container-low/40 border-b border-outline-variant/20 transition-colors items-center group">
+    <div class="col-span-6 md:col-span-5 flex items-center gap-3.5 min-w-0">
+      <span class="material-symbols-outlined text-secondary text-[20px] shrink-0">description</span>
+      <div class="flex flex-col min-w-0">
+        <a href="#" class="font-title-md text-body-md text-on-surface truncate group-hover:text-primary transition-colors hover:underline">
+          sample-scholarship-notice.pdf
+        </a>
+        <div class="flex items-center gap-2 text-body-sm text-secondary truncate mt-0.5">
+          <span class="">Academic Fellowship</span>
+          <span class="text-outline-variant">•</span>
+          <span class="">8 pages</span>
+        </div>
+      </div>
+    </div>
+    <div class="hidden md:flex md:col-span-3 flex-col text-body-sm text-secondary">
+      <span class="text-on-surface">14 mins ago</span>
+      <span class="font-label-mono text-[11px] text-outline">llama3:8b • on-device</span>
+    </div>
+    <div class="col-span-4 md:col-span-2 flex items-center">
+      <span class="inline-flex items-center gap-1.5 text-body-sm text-primary font-medium">
+        <span class="w-2 h-2 rounded-full bg-primary"></span>
+        <span class="">Ready for Review</span>
+      </span>
+    </div>
+    <div class="col-span-2 flex items-center justify-end gap-2">
+      <a href="#" class="inline-flex items-center gap-1 px-3 py-1 text-primary hover:bg-surface-container font-title-md text-body-sm rounded transition-colors">
+        <span class="">Open</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </a>
+      <button class="w-7 h-7 rounded flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="More">
+        <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- DOCUMENT ROW 02 -->
+  <article class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface-container-lowest hover:bg-surface-container-low/40 border-b border-outline-variant/20 transition-colors items-center group">
+    <div class="col-span-6 md:col-span-5 flex items-center gap-3.5 min-w-0">
+      <span class="material-symbols-outlined text-secondary text-[20px] shrink-0">assignment</span>
+      <div class="flex flex-col min-w-0">
+        <a href="#" class="font-title-md text-body-md text-on-surface truncate group-hover:text-primary transition-colors hover:underline">
+          sample-internship-guidelines.pdf
+        </a>
+        <div class="flex items-center gap-2 text-body-sm text-secondary truncate mt-0.5">
+          <span class="">Summer Research</span>
+          <span class="text-outline-variant">•</span>
+          <span class="">14 pages</span>
+        </div>
+      </div>
+    </div>
+    <div class="hidden md:flex md:col-span-3 flex-col text-body-sm text-secondary">
+      <span class="text-on-surface">Yesterday, 16:40</span>
+      <span class="font-label-mono text-[11px] text-outline">12 actions extracted</span>
+    </div>
+    <div class="col-span-4 md:col-span-2 flex items-center">
+      <span class="inline-flex items-center gap-1.5 text-body-sm text-secondary font-medium">
+        <span class="w-2 h-2 rounded-full bg-secondary"></span>
+        <span class="">Action List Active</span>
+      </span>
+    </div>
+    <div class="col-span-2 flex items-center justify-end gap-2">
+      <a href="#" class="inline-flex items-center gap-1 px-3 py-1 text-primary hover:bg-surface-container font-title-md text-body-sm rounded transition-colors">
+        <span class="">Open</span>
+        <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
+      </a>
+      <button class="w-7 h-7 rounded flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="More">
+        <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- DOCUMENT ROW 03 -->
+  <article class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface-container-lowest hover:bg-surface-container-low/40 border-b border-outline-variant/20 transition-colors items-center group">
+    <div class="col-span-6 md:col-span-5 flex items-center gap-3.5 min-w-0">
+      <span class="material-symbols-outlined text-tertiary text-[20px] shrink-0">history_edu</span>
+      <div class="flex flex-col min-w-0">
+        <a href="#" class="font-title-md text-body-md text-on-surface truncate group-hover:text-primary transition-colors hover:underline">
+          sample-examination-instructions.pdf
+        </a>
+        <div class="flex items-center gap-2 text-body-sm text-secondary truncate mt-0.5">
+          <span class="">Civil Services</span>
+          <span class="text-outline-variant">•</span>
+          <span class="">22 pages</span>
+        </div>
+      </div>
+    </div>
+    <div class="hidden md:flex md:col-span-3 flex-col text-body-sm text-secondary">
+      <span class="text-on-surface">Oct 3, 2025</span>
+      <span class="font-label-mono text-[11px] text-tertiary">2 ambiguities flagged</span>
+    </div>
+    <div class="col-span-4 md:col-span-2 flex items-center">
+      <span class="inline-flex items-center gap-1.5 text-body-sm text-tertiary font-medium">
+        <span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+        <span class="">Needs Verification</span>
+      </span>
+    </div>
+    <div class="col-span-2 flex items-center justify-end gap-2">
+      <a href="#" class="inline-flex items-center gap-1 px-3 py-1 bg-tertiary-fixed/40 text-on-tertiary-fixed hover:bg-tertiary-fixed font-title-md text-body-sm rounded transition-colors">
+        <span class="">Review</span>
+        <span class="material-symbols-outlined text-[14px]">priority_high</span>
+      </a>
+      <button class="w-7 h-7 rounded flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="More">
+        <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+      </button>
+    </div>
+  </article>
+
+  <!-- DOCUMENT ROW 04 -->
+  <article class="grid grid-cols-12 gap-4 px-6 py-4 bg-surface-container-lowest hover:bg-surface-container-low/40 transition-colors items-center group">
+    <div class="col-span-6 md:col-span-5 flex items-center gap-3.5 min-w-0">
+      <span class="material-symbols-outlined text-error text-[20px] shrink-0">sync_problem</span>
+      <div class="flex flex-col min-w-0">
+        <a href="#" class="font-title-md text-body-md text-on-surface truncate group-hover:text-error transition-colors hover:underline">
+          draft-grant-call-2026.pdf
+        </a>
+        <div class="flex items-center gap-2 text-body-sm text-secondary truncate mt-0.5">
+          <span class="">Research Grant</span>
+          <span class="text-outline-variant">•</span>
+          <span class="">6 pages</span>
+        </div>
+      </div>
+    </div>
+    <div class="hidden md:flex md:col-span-3 flex-col text-body-sm text-secondary">
+      <span class="text-error">Chunking Timeout</span>
+      <span class="font-label-mono text-[11px] text-outline">Ollama disconnected</span>
+    </div>
+    <div class="col-span-4 md:col-span-2 flex items-center">
+      <span class="inline-flex items-center gap-1.5 text-body-sm text-error font-medium">
+        <span class="w-2 h-2 rounded-full bg-error"></span>
+        <span class="">Halted</span>
+      </span>
+    </div>
+    <div class="col-span-2 flex items-center justify-end gap-2">
+      <button class="inline-flex items-center gap-1 px-3 py-1 text-secondary hover:text-on-surface hover:bg-surface-container font-title-md text-body-sm rounded transition-colors">
+        <span class="material-symbols-outlined text-[14px]">refresh</span>
+        <span class="">Retry</span>
+      </button>
+      <button class="w-7 h-7 rounded flex items-center justify-center text-secondary hover:text-on-surface hover:bg-surface-container transition-colors" title="More">
+        <span class="material-symbols-outlined text-[18px]">more_horiz</span>
+      </button>
+    </div>
+  </article>
+</section>
+<!-- Empty State Demonstrator Collapsible Card (Design Requirement 4) -->
+<section class="flex flex-col bg-surface-container-lowest border border-outline-variant/40 rounded-xl p-8 sm:p-12 items-center text-center shadow-sm">
+  <div class="w-28 h-28 mb-4 flex items-center justify-center">
+    <img class="w-24 h-24 object-contain opacity-90" alt="Serene desk illustration" src="https://lh3.googleusercontent.com/aida-public/AB6AXuANGgLYTdn7nbeImYlBSPaApU89asoYUqe5Oic6D1t1Qe-2JT1O3_YPnTAmoQ0zAm_qJ6haTrKFMD6S_J_SMZeHltDSrjSoqdr2IXIG9l6-t9ckaz5Lm0ZumSE5o59v9IicSC5aPujg8haPg16yY8XETiZCuDqdDqyh3U2McCJa3moGh1THFfLdKLjYT8RcsZasqjUpYw2WXAfnJorVbWRZtsBEkS0Rx6ZMZaRJCJwFDkz3VlUj6zpP1w">
+  </div>
+  <h3 class="font-headline-md text-headline-md text-on-surface font-serif">
+    Your reading desk is still clear.
+  </h3>
+  <p class="font-body-md text-body-md text-secondary max-w-md mt-1.5 mb-6 text-balance">
+    When you analyze a notice, citations, deadlines, and actionable tasks are neatly registered here for reference anytime.
+  </p>
+  <div class="flex items-center gap-3">
+    <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary font-title-md text-body-sm rounded-lg hover:bg-primary-container transition-all active:translate-y-[0.5px] shadow-sm">
+      <span class="material-symbols-outlined text-[16px]">upload_file</span>
+      <span class="">Choose PDF to Analyze</span>
+    </button>
+    <button class="inline-flex items-center gap-2 px-4 py-2.5 bg-surface-container-low hover:bg-surface-container text-on-surface font-title-md text-body-sm rounded-lg transition-colors">
+      <span class="">Load Sample Notice</span>
+    </button>
+  </div>
+</section>
+<!-- Visual Paper Storage Breakdown & Blotter Insight Section -->
+
+<!-- System Status & Privacy Footer (Design Requirement 5) -->
+<footer class="mt-2 mb-8 py-4 px-6 border-t border-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-secondary">
+  <div class="flex items-center gap-2 font-body-sm text-body-sm">
+    <span class="material-symbols-outlined text-[18px] text-primary">lock</span>
+    <span class="">Strictly local archive: PDF indices and citations remain entirely on this device.</span>
+  </div>
+  <div class="flex items-center gap-2 font-label-mono text-[11px]">
+    <span class="w-1.5 h-1.5 rounded-full bg-primary"></span>
+    <span class="">Local Engine • 0ms cloud telemetry</span>
+  </div>
+</footer>
+</div>
+</div></main></div>
+
+</body></html>
