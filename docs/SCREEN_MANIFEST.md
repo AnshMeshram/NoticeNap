@@ -13,72 +13,73 @@
 
 | Screen # | Screen Title | Stitch Screen ID | Device Type | Viewport Dimensions | Intended App Route | Status |
 |---|---|---|---|---|---|---|
-| **01** | NoticeNap — The Calm Document Desk | `d9bf8d7fd92d46ec8466ab1ae3279c6e` | Desktop | 2560 × 3064 (Canvas 1280 × 1642) | `/` (Main Workspace) | **Implementing (Slice 1)** |
-| **02** | NoticeNap — 02 Document Analysis | `95149c00f2b749528d5a0aa72e2aaedf` | Desktop | 2560 × 3492 (Canvas 1280 × 1731) | `/analysis/[id]` | Mapped for Phase 3 |
-| **03** | NoticeNap — 03 My Action List | `ed15fd037b6044eebfaecb162a62eabc` | Desktop | 2560 × 5016 (Canvas 1280 × 1942) | `/actions` | Mapped for Phase 4 |
-| **04** | NoticeNap — 04 Document Library | `48c85fd03e954c4186d0179ee0abea83` | Desktop | 2560 × 3824 (Canvas 1280 × 1461) | `/library` | Mapped for Phase 5 |
-| **05** | NoticeNap — 05 Mobile Experience | `eee916a541ac407292fe7a829c7831d5` | Mobile | 780 × 2890 (Canvas 390 × 1265) | Responsive breakpoint across all routes | Mapped for responsive layout |
+| **06** | **NoticeNap — 06 Dedicated Home** | `d64b931ac3a94df8a4a7616474dbbc9c` | Desktop/Mobile | 2560 × 9100 | `/` (Public Landing Page) | **Implemented & Verified** |
+| **01** | **NoticeNap — The Calm Document Desk** | `d9bf8d7fd92d46ec8466ab1ae3279c6e` | Desktop | 2560 × 3064 | `/desk` | **Implemented & Verified** |
+| **02** | **NoticeNap — 02 Document Analysis** | `95149c00f2b749528d5a0aa72e2aaedf` | Desktop | 2560 × 3492 | `/desk?tab=analysis` | **Implemented & Verified** |
+| **03** | **NoticeNap — 03 My Action List** | `ed15fd037b6044eebfaecb162a62eabc` | Desktop | 2560 × 5016 | `/desk?tab=actions` | **Implemented & Verified** |
+| **04** | **NoticeNap — 04 Document Library** | `48c85fd03e954c4186d0179ee0abea83` | Desktop | 2560 × 3824 | `/desk?tab=library` | **Implemented & Verified** |
+| **05** | **NoticeNap — 05 Mobile Experience** | `eee916a541ac407292fe7a829c7831d5` | Mobile | 780 × 2890 | `< 768px` Responsive Bottom Bar | **Implemented & Verified** |
 
 ---
 
 ## Screen Details & Component Breakdown
 
+### Screen 06: Dedicated Home (`d64b931ac3a94df8a4a7616474dbbc9c`)
+- **Visual Role**: Public landing page and product presentation.
+- **Key Sections**:
+  1. **Sticky Header**: NoticeNap wordmark, Sloth vector mark, Product/How It Works/Open-Source AI/GitHub links, `LOCAL ENGINE: ON-DEVICE` status chip, `Open NoticeNap` CTA.
+  2. **Hero Section**: Eyebrow pill ("YOUR PAPERWORK, AT A SLOWER PACE · HACKTOBERFEST 2026"), "Long notice? Take it slow." headline, "Analyze a PDF" primary button, sample notice pills (`sample-scholarship-notice.pdf`, `sample-exam-guidelines.pdf`).
+  3. **Tactile Desk Composition**: Gazette mockup (`#GAZ-2026-B81`), legal quote highlight, Barnaby the Sloth mascot vignette, "100% Page-Referenced" floating stamp.
+  4. **The Problem & The Remedy**: 3 cards detailing Important Dates, Eligibility & Requirements, Actionable Checklist.
+  5. **Three Simple Steps**: Step 1 (Drop in a PDF), Step 2 (Local AI extracts & organizes), Step 3 (Review evidence & follow tasks).
+  6. **Open-Source AI & Provenance**: Model choice (Ollama / Gemma 2), source-page citations, zero surveillance guarantee.
+  7. **Workspace Integration**: Direct links to Screen 01 (Desk), Screen 02 (Analysis), Screen 03 (Action List), Screen 04 (Library).
+  8. **Final CTA**: "Let the sloth handle the reading." with direct launch button to `/desk`.
+
 ### Screen 01: The Calm Document Desk (`d9bf8d7fd92d46ec8466ab1ae3279c6e`)
-- **Visual Role**: Primary drop zone and archival blotter.
+- **Route**: `/desk` (and `/workspace`)
+- **Visual Role**: Primary operational drop zone and archival blotter.
 - **Key Regions**:
-  1. **Left Nav Rail**: Fixed 64-width sidebar with NoticeNap wordmark, tagline ("Let the notice be long."), navigation links (`New Analysis`, `Document Library`, `Saved Checklists`, `Settings`), and bottom Ollama connection status card (`localhost:11434 • offline / connected`).
-  2. **Top Header**: Breadcrumb (`Desk Blotter / Archival Workspace`), live inference status chip (`INFERENCE: STANDBY / PROCESSING`), user profile avatar.
-  3. **Quiet Workspace Header**: "One less thing to figure out." title, subhead, "Local Ollama · 100% on device" privacy badge.
-  4. **Primary Drop Zone**: Tactile document drop area with hover/drag state, file picker trigger button, `.pdf` constraints (up to 50MB).
-  5. **4 Key Facets**: Grid detailing Dates, Eligibility, Required Documents, and Next Steps.
-  6. **Empty State / Recent Desk Tray**: Sloth mascot illustration resting on desk paperwork, "No paperwork processed yet.", sample notice chips (`Rhodes Scholarship 2025`, `Civil Services Exam Notice`, `Research Fellowship PDF`).
-  7. **Trust & Traceability Banner**: "Every fact verified with source page citations" source-linked guarantee.
+  1. **Left Nav Rail**: Fixed 64-width sidebar with "Back to Home" link, NoticeNap wordmark, navigation tabs, and live Ollama connection status card.
+  2. **Top Header**: Breadcrumb, inference status chip, language selector (`EN`, `हिंदी`, `मराठी`).
+  3. **Quiet Workspace Header**: "Give that notice a rest." title, subhead, "Local Ollama · 100% on device" privacy badge.
+  4. **Primary Drop Zone**: Tactile document drop area with hover/drag state, file picker, 50MB size guard.
+  5. **4 Key Facets**: Dates, Eligibility, Documents, Next Steps.
+  6. **Empty State / Recent Desk Tray**: Sloth mascot illustration, sample notice chips.
 
 ### Screen 02: Document Analysis (`95149c00f2b749528d5a0aa72e2aaedf`)
+- **Route**: `/desk?tab=analysis`
 - **Visual Role**: Two-column split-view workspace.
-- **Left Column**: PDF document viewer with extracted text, page navigator, and highlighted clauses.
+- **Left Column**: PDF raw page stream with 1-indexed pagination (`Page 1`, `Page 2`, ...).
 - **Right Column**: Structured facet analysis cards:
-  - Important dates & deadlines countdown.
-  - Eligibility benchmark criteria (pass/conditional/unmatched).
+  - Important dates & deadlines with source page citations.
+  - Eligibility benchmark criteria (age, degrees, percentages).
   - Required document checklist with specification notes.
-  - Source-cited clauses linked directly to PDF page numbers.
+  - Application fees & waiver conditions.
+  - Uncertainty notices & caveats requiring human verification.
+  - Scanned PDF warning alert when OCR is needed.
 
 ### Screen 03: My Action List (`ed15fd037b6044eebfaecb162a62eabc`)
+- **Route**: `/desk?tab=actions`
 - **Visual Role**: Prioritized, actionable checklist derived from analyzed notices.
 - **Key Features**:
-  - Filterable by urgency (Immediate, Before Deadline, Post-Submission).
-  - Checkbox toggle with completion progress indicator.
-  - "Jump to Page X" citation links on every action item.
-  - Export to markdown / calendar reminder file.
+  - Filterable by urgency (All, Pending, Completed).
+  - Checkbox toggles with reactive progress bar (`% Completed`).
+  - Source-page citation badges on every action item.
+  - One-click Markdown Export (`.md`).
+  - One-click RFC-5545 iCalendar Export (`.ics`).
 
 ### Screen 04: Document Library (`48c85fd03e954c4186d0179ee0abea83`)
+- **Route**: `/desk?tab=library`
 - **Visual Role**: Archived notices desk tray and historical ledger.
 - **Key Features**:
-  - Filter cards (All, Active, Expired, Archived).
-  - Notice cards showing title, issuing body, key deadline badge, completion status bar.
-  - Quick actions: Re-open desk analysis, view checklist, delete notice.
+  - Live search filter by filename, SHA-256 fingerprint, page count, and file size.
+  - Quick actions: Re-open desk analysis, view checklist, delete notice from memory desk tray.
+  - Zero horizontal clipping with responsive table layout.
 
 ### Screen 05: Mobile Experience (`eee916a541ac407292fe7a829c7831d5`)
-- **Visual Role**: Compact 390px mobile layout.
+- **Route**: Responsive viewport (`< 768px`) across all pages
 - **Key Features**:
-  - Collapsible drawer / bottom bar navigation.
-  - Stacked cards for mobile touch interaction.
-  - Quick camera or file upload for notices on mobile.
-
----
-
-## Source Assets & References
-
-- **Logo Wordmark**: `stitch-handoff/logo.png`
-- **Sloth Mascot**: `stitch-handoff/sloth.png`
-- **Design Tokens**: Material Theme JSON extracted directly from Stitch project metadata:
-  - Primary: `#0a3626`
-  - Primary Container: `#244d3b`
-  - Secondary Container: `#dae3d0`
-  - Background / Surface: `#f8fbef`
-  - Surface Container Lowest: `#ffffff`
-  - Surface Container Low: `#f2f5ea`
-  - Surface Container: `#ecefe4`
-  - Surface Container High: `#e6e9de`
-  - Outline Variant: `#c1c8c2`
-  - Typography: `Newsreader`, `Manrope`, `JetBrains Mono`
+  - Tested at 390 × 844 px.
+  - Fixed ergonomic bottom navigation bar: **The Desk**, **Analysis**, **Actions**, **Library**, and **Settings**.
+  - Touch-friendly tap targets (minimum 44px height), responsive typography, zero horizontal overflow.

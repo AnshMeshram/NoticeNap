@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#dae3d0"/>
+      <stop offset="100%" stop-color="#c5d1bb"/>
+    </radialGradient>
+  </defs>
+  <!-- Background Badge -->
+  <rect width="100" height="100" rx="28" fill="#0a3626"/>
+  <!-- Inner Sage Plaque -->
+  <rect x="6" y="6" width="88" height="88" rx="22" fill="#244d3b"/>
+  <!-- Sloth Head Silhouette -->
+  <circle cx="50" cy="52" r="32" fill="#f8fbef"/>
+  <!-- Soft Ear Accents -->
+  <circle cx="24" cy="38" r="8" fill="#dae3d0"/>
+  <circle cx="24" cy="38" r="5" fill="#0a3626"/>
+  <circle cx="76" cy="38" r="8" fill="#dae3d0"/>
+  <circle cx="76" cy="38" r="5" fill="#0a3626"/>
+  <!-- Eye Mask Bands (Distinctive Sloth Patches) -->
+  <path d="M 28 44 Q 38 48 44 54 Q 36 60 26 56 Z" fill="#dae3d0"/>
+  <path d="M 72 44 Q 62 48 56 54 Q 64 60 74 56 Z" fill="#dae3d0"/>
+  <!-- Sleepy Resting Eyes (Curved Arc Lines) -->
+  <path d="M 30 52 Q 36 56 42 52" stroke="#0a3626" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <path d="M 58 52 Q 64 56 70 52" stroke="#0a3626" stroke-width="3" stroke-linecap="round" fill="none"/>
+  <!-- Snout / Nose / Gentle Smile -->
+  <ellipse cx="50" cy="62" rx="10" ry="7" fill="#dae3d0"/>
+  <path d="M 46 60 Q 50 58 54 60 Q 50 63 46 60 Z" fill="#0a3626"/>
+  <path d="M 50 62 L 50 66" stroke="#0a3626" stroke-width="2" stroke-linecap="round"/>
+  <path d="M 46 66 Q 50 69 54 66" stroke="#0a3626" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Amber Rest Dot (Slow & Steady Indicator) -->
+  <circle cx="82" cy="18" r="5" fill="#f0bf63"/>
+</svg>

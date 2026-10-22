@@ -1,7 +1,7 @@
 # NoticeNap 🦥
 
 <p align="center">
-  <img src="stitch-handoff/logo.png" alt="NoticeNap Logo" width="80" />
+  <img src="frontend/public/logo.svg" alt="NoticeNap Logo" width="280" />
 </p>
 
 <p align="center">
@@ -30,66 +30,42 @@ Designed in **Google Stitch Canvas** (Project ID: `14480156016592971476`), Notic
 
 ---
 
-## 📱 Complete Multi-Screen Implementation
+## 📱 Application Routes & Screen Inventory
 
-All five approved Google Stitch screens are fully implemented and verified:
+All six approved Google Stitch screens are fully implemented and verified:
 
-### 1. 🛋️ The Calm Document Desk (`Screen 01` — `d9bf8d7fd92d46ec8466ab1ae3279c6e`)
-- Tactile, distraction-free PDF drop zone with drag-and-drop feedback and 50MB file validation.
-- Live probe for local Ollama connectivity (`localhost:11434`) displaying real-time daemon and model readiness (`gemma2:latest`).
-- Restorative empty desk tray featuring the NoticeNap sleepy sloth mascot resting on paperwork.
-- Quick-launch sample notices (*Rhodes Scholarship 2025*, *Civil Services Exam Notice*, *Research Fellowship PDF*).
-- 4-facet automated breakdown overview cards (Deadlines, Eligibility, Documents, Next Steps).
-
-### 2. 🔍 Document Analysis Split View (`Screen 02` — `95149c00f2b749528d5a0aa72e2aaedf`)
-- Synchronized split view: left-hand air-gapped page stream alongside structured facet cards.
-- **4 Key Breakdown Angles**:
-  - **Important Dates**: Deadlines, exam windows, and interview dates with source-page badges.
-  - **Eligibility Stipulations**: Age limits, educational benchmarks, and criteria classification.
-  - **Required Documents**: File formats, certificate rules, and size stipulations.
-  - **Sequential Next Steps**: Actionable chronological checklist.
-- Page navigation buttons (`Page 1`, `Page 2`, ...) allow instant verification of extracted clauses.
-- **Application Fees & Exemptions**: Highlights fee waivers (e.g. SC/ST/PwBD) and payment cutoffs.
-- **Uncertainty & Caveat Notices**: Surfaces ambiguous clauses, missing dates, or conditions requiring human verification.
-- **Scanned PDF Guard**: Identifies rasterized/image-only PDFs and warns when OCR is needed.
-
-### 3. ✅ My Action List (`Screen 03` — `ed15fd037b6044eebfaecb162a62eabc`)
-- Interactive task checklist with individual checkbox toggles and reactive progress tracking bar (`% Completed`).
-- Task counters dynamically derived from real checklist items (no stale mock counters).
-- Source page citation links on every action item for immediate auditability.
-- Filter by **All**, **Pending**, and **Completed** tasks.
-- **One-click Markdown Export** (`.md`) to integrate directly into Obsidian, Notion, or personal task managers.
-- **One-click Calendar Export** (`.ics` / RFC-5545) with embedded alarms for exam windows and cutoff dates.
-
-### 4. 🗄️ Document Library (`Screen 04` — `48c85fd03e954c4186d0179ee0abea83`)
-- Local historical ledger storing all processed notices on the archival desk tray.
-- Instant search filter by filename, SHA-256 fingerprint, page count, and file size.
-- One-click re-inspection and removal from desk storage.
-- Horizontal clipping resolved with responsive table layout and fixed badge widths.
-
-### 5. 📱 Mobile Experience (`Screen 05` — `eee916a541ac407292fe7a829c7831d5`)
-- Designed and tested for mobile viewports (390 × 844 px).
-- Fixed ergonomic bottom navigation bar: **The Desk**, **Analysis**, **Actions**, **Library**, and **Settings**.
-- Touch-friendly tap targets (minimum 44px height), responsive typography, and wrapped badge containers.
-- Zero horizontal overflow.
+| Route | Approved Stitch Screen | Stitch ID | Purpose |
+|:---|:---|:---|:---|
+| **`/`** | **06 Dedicated Home** | `d64b931ac3a94df8a4a7616474dbbc9c` | Public landing page introducing the product, value proposition, tactile document desk preview, open-source model explanation, and direct "Analyze a PDF" launch button. |
+| **`/desk`** | **01 The Calm Document Desk** | `d9bf8d7fd92d46ec8466ab1ae3279c6e` | Operational workspace with PDF drop zone, file validation, live Ollama daemon probe, empty desk blotter, and quick-launch sample notices. |
+| **`/desk?tab=analysis`** | **02 Document Analysis** | `95149c00f2b749528d5a0aa72e2aaedf` | Split view: left-hand raw page stream with 1-indexed pagination alongside 4 structured facets (Dates, Eligibility, Documents, Next Steps), fee waivers, and uncertainty notices. |
+| **`/desk?tab=actions`** | **03 My Action List** | `ed15fd037b6044eebfaecb162a62eabc` | Interactive task checklist with individual checkbox toggles, reactive progress tracking (`% Completed`), Markdown export (`.md`), and RFC-5545 iCalendar export (`.ics`). |
+| **`/desk?tab=library`** | **04 Document Library** | `48c85fd03e954c4186d0179ee0abea83` | Historical ledger table of processed notices, SHA-256 fingerprints, page counts, word counts, and search filter with zero clipping. |
+| **Responsive `< 768px`** | **05 Mobile Experience** | `eee916a541ac407292fe7a829c7831d5` | Mobile layout tested at 390 × 844 px with fixed bottom navigation bar: **The Desk**, **Analysis**, **Actions**, **Library**, and **Settings**. |
+| **`/workspace`** | *Workspace Alias* | — | Automatically redirects to `/desk`. |
 
 ---
 
-## 🌐 Multi-Language Support
+## 🦥 Sloth Brand Asset Family
 
-NoticeNap supports multi-lingual notice extraction:
-- **English (`en`)**: Primary baseline extraction.
-- **Hindi (`hi` — हिंदी)**: Devanagari translation preserving technical benchmarks, dates, and proper nouns.
-- **Marathi (`mr` — मराठी)**: Regional notification extraction preserving amounts, reservation categories, and deadlines.
+NoticeNap features a cohesive, calm visual identity built around Barnaby the Sleepy Sloth:
 
-Language switcher is available in the top bar across all views.
+1. **Vector Mascot Icon** ([`frontend/public/sloth-icon.svg`](file:///c:/Users/shrin/Desktop/Hactoberfest2026/NoticeNap/frontend/public/sloth-icon.svg)): Stylized, recognizable sloth-face mark inside a Forest Green badge with Soft Sage patches and a Muted Amber rest indicator.
+2. **Combined Wordmark & Logo** ([`frontend/public/logo.svg`](file:///c:/Users/shrin/Desktop/Hactoberfest2026/NoticeNap/frontend/public/logo.svg)): Scalable SVG pairing the sloth emblem with Newsreader serif typography.
+3. **Hero Illustration** ([`frontend/public/images/brand/sloth-mascot.png`](file:///c:/Users/shrin/Desktop/Hactoberfest2026/NoticeNap/frontend/public/images/brand/sloth-mascot.png)): The official sloth mascot resting peacefully on desk paperwork.
+4. **App & PWA Icons**:
+   - `frontend/public/icon-192.png` (192 × 192 px)
+   - `frontend/public/icon-512.png` (512 × 512 px)
+   - `frontend/app/apple-icon.png` and `frontend/public/apple-touch-icon.png` (180 × 180 px)
+   - `frontend/app/icon.svg` & `frontend/app/icon.png` (32 × 32 px Favicon)
+5. **Web App Manifest** ([`frontend/public/manifest.json`](file:///c:/Users/shrin/Desktop/Hactoberfest2026/NoticeNap/frontend/public/manifest.json)).
 
 ---
 
 ## 🛡️ Privacy & Local AI Execution Architecture
 
 ### Why Local Ollama (Gemma 2)?
-A public cloud frontend (e.g., Vercel) **cannot** reach an end-user's `localhost:11434` directly due to browser cross-origin mixed-content and loopback networking policies. Furthermore, sending confidential public exam filings or scholarship documents to unapproved cloud APIs violates privacy.
+A public cloud deployment (e.g., Vercel) **cannot** reach an end-user's `localhost:11434` directly due to browser cross-origin mixed-content and loopback networking policies. Furthermore, sending confidential public exam filings or scholarship documents to unapproved cloud APIs violates privacy.
 
 NoticeNap is built on a **privacy-first, air-gapped architecture**:
 1. The user runs NoticeNap locally.
@@ -97,6 +73,7 @@ NoticeNap is built on a **privacy-first, air-gapped architecture**:
 3. The backend communicates locally with the user's running Ollama daemon (`http://localhost:11434`).
 4. The selected open-weight model (`gemma2:latest`) runs fully offline on CPU/GPU.
 5. Zero PDF bytes or extracted text leave your machine.
+6. If Ollama is offline or uninstalled, NoticeNap automatically falls back to an offline pattern extractor so the app remains fully functional.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -197,10 +174,10 @@ This produces three ready-to-test PDF files:
 
 | Component | Test Command | Result |
 |:---|:---|:---|
-| **Backend API & Security** | `pytest backend/test_backend.py -v` | **5/5 Passed (100%)** |
+| **Backend API & Security** | `pytest backend/test_backend.py -v` | **5/5 Passed (100%) in 76.03s** |
 | **Frontend Code Quality** | `npm run lint` (ESLint) | **0 Errors, 0 Warnings** |
 | **Frontend Type Checking** | Next.js TypeScript Compiler | **0 Errors** |
-| **Production Build** | `npm run build` | **Compiled Successfully** |
+| **Production Build** | `npm run build` | **Compiled Successfully (10 static pages/routes)** |
 
 ---
 

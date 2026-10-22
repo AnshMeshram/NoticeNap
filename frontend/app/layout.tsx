@@ -2,8 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "NoticeNap — Calm Document Desk",
-  description: "Let the notice be long. Your to-do list shouldn't. Drop in an official notice and extract dates, eligibility criteria, and next steps without cloud processing.",
+  title: "NoticeNap — Slow and Steady Document Intelligence",
+  description: "Let the notice be long. Your to-do list shouldn't. Turn lengthy official PDFs into clear summaries, important deadlines, and an actionable checklist directly on your local machine.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
 };
 
 export default function RootLayout({
