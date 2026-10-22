@@ -1,12 +1,27 @@
 from typing import List, Dict, Optional
 import datetime
+import os
+import sys
 from fastapi import FastAPI, UploadFile, File, HTTPException, status, Response
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings
-from .security import SecurityException
-from .extractor import extract_pdf_pages, DocumentExtractionResult
-from .ollama_client import check_ollama_status, OllamaStatus
-from .analyzer import analyze_document_with_ai, NoticeAnalysisResult, ActionStep
+
+# Ensure backend directory is in sys.path for direct uvicorn execution
+backend_dir = os.path.dirname(os.path.abspath(__file__))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+try:
+    from .config import settings
+    from .security import SecurityException
+    from .extractor import extract_pdf_pages, DocumentExtractionResult
+    from .ollama_client import check_ollama_status, OllamaStatus
+    from .analyzer import analyze_document_with_ai, NoticeAnalysisResult, ActionStep
+except ImportError:
+    from config import settings
+    from security import SecurityException
+    from extractor import extract_pdf_pages, DocumentExtractionResult
+    from ollama_client import check_ollama_status, OllamaStatus
+    from analyzer import analyze_document_with_ai, NoticeAnalysisResult, ActionStep
 
 app = FastAPI(
     title=settings.app_name,
@@ -220,3 +235,9 @@ async def export_calendar(document_id: str):
             "Content-Disposition": f'attachment; filename="{safe_name}_deadlines.ics"'
         }
     )
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
+

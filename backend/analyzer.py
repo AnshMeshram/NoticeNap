@@ -3,8 +3,12 @@ import json
 from typing import List, Optional
 import httpx
 from pydantic import BaseModel, Field
-from .config import settings
-from .extractor import DocumentExtractionResult
+try:
+    from .config import settings
+    from .extractor import DocumentExtractionResult
+except ImportError:
+    from config import settings
+    from extractor import DocumentExtractionResult
 
 class NoticeDate(BaseModel):
     title: str

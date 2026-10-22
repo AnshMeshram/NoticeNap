@@ -1,7 +1,10 @@
 from typing import List, Optional
 import httpx
 from pydantic import BaseModel
-from .config import settings
+try:
+    from .config import settings
+except ImportError:
+    from config import settings
 
 class OllamaStatus(BaseModel):
     connected: bool

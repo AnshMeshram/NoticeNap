@@ -4,7 +4,10 @@ import uuid
 from typing import List
 import pymupdf
 from pydantic import BaseModel, Field
-from .security import PDFSecurityGuard, SecurityException
+try:
+    from .security import PDFSecurityGuard, SecurityException
+except ImportError:
+    from security import PDFSecurityGuard, SecurityException
 
 class ExtractedPage(BaseModel):
     page_number: int = Field(..., description="1-indexed page number in the original PDF")
