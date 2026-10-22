@@ -1,0 +1,514 @@
+{
+  "Rhodes_Scholarship_2025.pdf": {
+    "document": {
+      "document_id": "doc_48c01fca0632",
+      "filename": "Rhodes Scholarship 2025.pdf",
+      "sha256": "4ea90199f60c63d889bf2f74905a7ed8c8e750b2cf7be8a53d51ef4e47e0f7e1",
+      "file_size_bytes": 2386,
+      "page_count": 2,
+      "total_words": 224,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "THE RHODES SCHOLARSHIP 2025 (INDIA)\nTrust Memorandum & Official Selection Notice\n1. OVERVIEW\nThe Rhodes Scholarship is the oldest and perhaps most prestigious international scholarship\nprogramme, enabling outstanding young people from around the world to study at the\nUniversity of Oxford.\n2. CRITICAL CALENDAR & DEADLINES\n- Applications Open: 01 June 2025, 00:01 BST\n- Final Submission Deadline: 01 August 2025, 23:59 IST (Strict \u00b7 No extensions)\n- Longlist Notification: 15 September 2025\n- Preliminary Interviews: Early October 2025 (Virtual)\n- Final In-Person Interviews: November 2025 (New Delhi)",
+          "char_count": 601,
+          "word_count": 88
+        },
+        {
+          "page_number": 2,
+          "text": "3. ELIGIBILITY CRITERIA\n- Citizenship: You must be a citizen of India.\n- Age Benchmark: You must be at least 18 and not yet have reached your 24th birthday on 01 October 2025.\n- Academic Record: Formal undergraduate degree with First Class Honours or equivalent GPA.\n4. MANDATORY DOCUMENTS CHECKLIST\n1. Official university academic transcripts with grading key.\n2. Curriculum Vitae (CV) strictly under 2 pages (no photographs or personal details).\n3. Personal Statement (1,000 words maximum) outlining personal values and studies.\n4. Valid Indian Passport identification page.\n5. Five reference letters (at least 3 academic references).\n5. APPLICATION STEPS\n- Step 1: Register on the Oxford Rhodes portal at rhodeshouse.ox.ac.uk\n- Step 2: Upload all documents in single-page or multi-page PDF format (max 5MB each).\n- Step 3: Verify referee invitations by 25 July 2025.",
+          "char_count": 869,
+          "word_count": 136
+        }
+      ],
+      "is_encrypted": false,
+      "is_scanned": false,
+      "security_warnings": []
+    },
+    "analysis": {
+      "document_id": "doc_48c01fca0632",
+      "filename": "Rhodes Scholarship 2025.pdf",
+      "purpose": "Official selection, circular, or examination announcement from Rhodes Scholarship 2025.pdf.",
+      "summary": "Processed 2 pages with 224 words. Identified 4 dates, 3 eligibility benchmarks, and 5 required document specifications.",
+      "application_fee": "No specific application fee mentioned.",
+      "uncertainties": [
+        "No conflicting clauses or unverified provisions detected in source."
+      ],
+      "dates": [
+        {
+          "title": "2. CRITICAL CALENDAR & DEADLINES",
+          "date_str": "2. CRITICAL CALENDAR & DEADLINES",
+          "is_deadline": true,
+          "source_page": 1,
+          "context": "2. CRITICAL CALENDAR & DEADLINES"
+        },
+        {
+          "title": "- Final Submission Deadline: 01 August 2025, 23:59 IST (Stri",
+          "date_str": "- Final Submission Deadline: 01 August 2025, 23:59 IST (Strict \u00b7 No extensions)",
+          "is_deadline": true,
+          "source_page": 1,
+          "context": "- Final Submission Deadline: 01 August 2025, 23:59 IST (Strict \u00b7 No extensions)"
+        },
+        {
+          "title": "- Preliminary Interviews: Early October 2025 (Virtual)",
+          "date_str": "- Preliminary Interviews: Early October 2025 (Virtual)",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Preliminary Interviews: Early October 2025 (Virtual)"
+        },
+        {
+          "title": "- Final In-Person Interviews: November 2025 (New Delhi)",
+          "date_str": "- Final In-Person Interviews: November 2025 (New Delhi)",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Final In-Person Interviews: November 2025 (New Delhi)"
+        }
+      ],
+      "eligibility": [
+        {
+          "category": "Requirement",
+          "requirement": "3. ELIGIBILITY CRITERIA",
+          "is_strict": true,
+          "source_page": 2
+        },
+        {
+          "category": "Requirement",
+          "requirement": "- Citizenship: You must be a citizen of India.",
+          "is_strict": true,
+          "source_page": 2
+        },
+        {
+          "category": "Requirement",
+          "requirement": "- Academic Record: Formal undergraduate degree with First Class Honours or equivalent GPA.",
+          "is_strict": true,
+          "source_page": 2
+        }
+      ],
+      "documents": [
+        {
+          "name": "4. MANDATORY DOCUMENTS CHECKLIST",
+          "specification": "4. MANDATORY DOCUMENTS CHECKLIST",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "1. Official university academic transcripts with g",
+          "specification": "1. Official university academic transcripts with grading key.",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "2. Curriculum Vitae (CV) strictly under 2 pages (n",
+          "specification": "2. Curriculum Vitae (CV) strictly under 2 pages (no photographs or personal details).",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "4. Valid Indian Passport identification page.",
+          "specification": "4. Valid Indian Passport identification page.",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "- Step 2: Upload all documents in single-page or m",
+          "specification": "- Step 2: Upload all documents in single-page or multi-page PDF format (max 5MB each).",
+          "is_mandatory": true,
+          "source_page": 2
+        }
+      ],
+      "actions": [
+        {
+          "step_number": 1,
+          "title": "1. OVERVIEW",
+          "description": "1. OVERVIEW",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 2,
+          "title": "2. CRITICAL CALENDAR & DEADLINES",
+          "description": "2. CRITICAL CALENDAR & DEADLINES",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 3,
+          "title": "- Applications Open: 01 June 2025, 00:01 BST",
+          "description": "- Applications Open: 01 June 2025, 00:01 BST",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 4,
+          "title": "- Final Submission Deadline: 01 August 2025, 23:59",
+          "description": "- Final Submission Deadline: 01 August 2025, 23:59 IST (Strict \u00b7 No extensions)",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 5,
+          "title": "- Longlist Notification: 15 September 2025",
+          "description": "- Longlist Notification: 15 September 2025",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 6,
+          "title": "- Preliminary Interviews: Early October 2025 (Virt",
+          "description": "- Preliminary Interviews: Early October 2025 (Virtual)",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 7,
+          "title": "- Final In-Person Interviews: November 2025 (New D",
+          "description": "- Final In-Person Interviews: November 2025 (New Delhi)",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 8,
+          "title": "3. ELIGIBILITY CRITERIA",
+          "description": "3. ELIGIBILITY CRITERIA",
+          "deadline": null,
+          "source_page": 2,
+          "completed": false
+        }
+      ],
+      "language": "en",
+      "ai_engine": "local-deterministic-extractor",
+      "generated_at": "2026-10-21"
+    }
+  },
+  "Civil_Services_Exam_Notice.pdf": {
+    "document": {
+      "document_id": "doc_59a02863a82b",
+      "filename": "Civil Services Exam Notice.pdf",
+      "sha256": "70cf89f8ec1ce0268f410b8623ac91386a4cc41673408359df049c7d7899388f",
+      "file_size_bytes": 2132,
+      "page_count": 2,
+      "total_words": 203,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "UNION PUBLIC SERVICE COMMISSION \u00b7 EXAMINATION NOTICE NO. 05/2026-CSP\nCIVIL SERVICES EXAMINATION, 2026\nIMPORTANT DATES & DEADLINES:\n- Online Applications Open: 14 February 2026\n- Last Date for Receipt of Applications: 05 March 2026 (till 18:00 Hours)\n- Prelims Exam Date: 26 May 2026\n- Mains Exam Schedule: 20 September 2026 to 29 September 2026\nFEE SPECIFICATIONS:\n- Candidates are required to pay a fee of Rs. 100/- (Rupees One Hundred only).\n- Female / SC / ST / PwBD candidates are exempted from payment of fee.",
+          "char_count": 514,
+          "word_count": 87
+        },
+        {
+          "page_number": 2,
+          "text": "ELIGIBILITY CONDITIONS:\n1. Nationality: A candidate must be a citizen of India for IAS and IPS.\n2. Age Limits: A candidate must have attained the age of 21 years and must not have attained\n   the age of 32 years on the 1st of August, 2026.\n3. Minimum Educational Qualifications: A candidate must hold a Graduate Degree of any of\n   the Universities incorporated by an Act of the Central or State Legislature in India.\nREQUIRED DOCUMENTS AT OTR PORTAL:\n- One-Time Registration (OTR) profile with government photo ID proof.\n- Scanned Photograph (20KB - 50KB, JPG/JPEG format).\n- Scanned Signature (10KB - 20KB, JPG/JPEG format).\n- Photo Identity Card (Aadhaar Card/Voter Card/PAN Card/Passport) in PDF (max 1MB).",
+          "char_count": 710,
+          "word_count": 116
+        }
+      ],
+      "is_encrypted": false,
+      "is_scanned": false,
+      "security_warnings": []
+    },
+    "analysis": {
+      "document_id": "doc_59a02863a82b",
+      "filename": "Civil Services Exam Notice.pdf",
+      "purpose": "Official selection, circular, or examination announcement from Civil Services Exam Notice.pdf.",
+      "summary": "Processed 2 pages with 203 words. Identified 11 dates, 4 eligibility benchmarks, and 5 required document specifications.",
+      "application_fee": "- Candidates are required to pay a fee of Rs. 100/- (Rupees One Hundred only).",
+      "uncertainties": [
+        "No conflicting clauses or unverified provisions detected in source."
+      ],
+      "dates": [
+        {
+          "title": "UNION PUBLIC SERVICE COMMISSION \u00b7 EXAMINATION NOTICE NO. 05/",
+          "date_str": "UNION PUBLIC SERVICE COMMISSION \u00b7 EXAMINATION NOTICE NO. 05/2026-CSP",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "UNION PUBLIC SERVICE COMMISSION \u00b7 EXAMINATION NOTICE NO. 05/2026-CSP"
+        },
+        {
+          "title": "CIVIL SERVICES EXAMINATION, 2026",
+          "date_str": "CIVIL SERVICES EXAMINATION, 2026",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "CIVIL SERVICES EXAMINATION, 2026"
+        },
+        {
+          "title": "IMPORTANT DATES & DEADLINES:",
+          "date_str": "IMPORTANT DATES & DEADLINES:",
+          "is_deadline": true,
+          "source_page": 1,
+          "context": "IMPORTANT DATES & DEADLINES:"
+        },
+        {
+          "title": "- Last Date for Receipt of Applications: 05 March 2026 (till",
+          "date_str": "- Last Date for Receipt of Applications: 05 March 2026 (till 18:00 Hours)",
+          "is_deadline": true,
+          "source_page": 1,
+          "context": "- Last Date for Receipt of Applications: 05 March 2026 (till 18:00 Hours)"
+        },
+        {
+          "title": "- Prelims Exam Date: 26 May 2026",
+          "date_str": "- Prelims Exam Date: 26 May 2026",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Prelims Exam Date: 26 May 2026"
+        },
+        {
+          "title": "- Mains Exam Schedule: 20 September 2026 to 29 September 202",
+          "date_str": "- Mains Exam Schedule: 20 September 2026 to 29 September 2026",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Mains Exam Schedule: 20 September 2026 to 29 September 2026"
+        },
+        {
+          "title": "- Candidates are required to pay a fee of Rs. 100/- (Rupees ",
+          "date_str": "- Candidates are required to pay a fee of Rs. 100/- (Rupees One Hundred only).",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Candidates are required to pay a fee of Rs. 100/- (Rupees One Hundred only)."
+        },
+        {
+          "title": "- Female / SC / ST / PwBD candidates are exempted from payme",
+          "date_str": "- Female / SC / ST / PwBD candidates are exempted from payment of fee.",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "- Female / SC / ST / PwBD candidates are exempted from payment of fee."
+        }
+      ],
+      "eligibility": [
+        {
+          "category": "Requirement",
+          "requirement": "ELIGIBILITY CONDITIONS:",
+          "is_strict": true,
+          "source_page": 2
+        },
+        {
+          "category": "Requirement",
+          "requirement": "1. Nationality: A candidate must be a citizen of India for IAS and IPS.",
+          "is_strict": true,
+          "source_page": 2
+        },
+        {
+          "category": "Age Limit",
+          "requirement": "2. Age Limits: A candidate must have attained the age of 21 years and must not have attained",
+          "is_strict": true,
+          "source_page": 2
+        },
+        {
+          "category": "Requirement",
+          "requirement": "3. Minimum Educational Qualifications: A candidate must hold a Graduate Degree of any of",
+          "is_strict": true,
+          "source_page": 2
+        }
+      ],
+      "documents": [
+        {
+          "name": "REQUIRED DOCUMENTS AT OTR PORTAL:",
+          "specification": "REQUIRED DOCUMENTS AT OTR PORTAL:",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "- One-Time Registration (OTR) profile with governm",
+          "specification": "- One-Time Registration (OTR) profile with government photo ID proof.",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "- Scanned Photograph (20KB - 50KB, JPG/JPEG format",
+          "specification": "- Scanned Photograph (20KB - 50KB, JPG/JPEG format).",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "- Scanned Signature (10KB - 20KB, JPG/JPEG format)",
+          "specification": "- Scanned Signature (10KB - 20KB, JPG/JPEG format).",
+          "is_mandatory": true,
+          "source_page": 2
+        },
+        {
+          "name": "- Photo Identity Card (Aadhaar Card/Voter Card/PAN",
+          "specification": "- Photo Identity Card (Aadhaar Card/Voter Card/PAN Card/Passport) in PDF (max 1MB).",
+          "is_mandatory": true,
+          "source_page": 2
+        }
+      ],
+      "actions": [
+        {
+          "step_number": 1,
+          "title": "- Online Applications Open: 14 February 2026",
+          "description": "- Online Applications Open: 14 February 2026",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 2,
+          "title": "- Last Date for Receipt of Applications: 05 March ",
+          "description": "- Last Date for Receipt of Applications: 05 March 2026 (till 18:00 Hours)",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 3,
+          "title": "- Prelims Exam Date: 26 May 2026",
+          "description": "- Prelims Exam Date: 26 May 2026",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 4,
+          "title": "- Mains Exam Schedule: 20 September 2026 to 29 Sep",
+          "description": "- Mains Exam Schedule: 20 September 2026 to 29 September 2026",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 5,
+          "title": "- Candidates are required to pay a fee of Rs. 100/",
+          "description": "- Candidates are required to pay a fee of Rs. 100/- (Rupees One Hundred only).",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 6,
+          "title": "- Female / SC / ST / PwBD candidates are exempted ",
+          "description": "- Female / SC / ST / PwBD candidates are exempted from payment of fee.",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 7,
+          "title": "1. Nationality: A candidate must be a citizen of I",
+          "description": "1. Nationality: A candidate must be a citizen of India for IAS and IPS.",
+          "deadline": null,
+          "source_page": 2,
+          "completed": false
+        },
+        {
+          "step_number": 8,
+          "title": "2. Age Limits: A candidate must have attained the ",
+          "description": "2. Age Limits: A candidate must have attained the age of 21 years and must not have attained",
+          "deadline": null,
+          "source_page": 2,
+          "completed": false
+        }
+      ],
+      "language": "en",
+      "ai_engine": "local-deterministic-extractor",
+      "generated_at": "2026-10-21"
+    }
+  },
+  "Research_Fellowship_PDF.pdf": {
+    "document": {
+      "document_id": "doc_b1024f79edc8",
+      "filename": "Research Fellowship PDF.pdf",
+      "sha256": "2a781cf482d497b97d6c7fb6a3e6ca3fc0542d05636fb6c3d2fe5d0f1ac3a1f6",
+      "file_size_bytes": 1255,
+      "page_count": 1,
+      "total_words": 75,
+      "pages": [
+        {
+          "page_number": 1,
+          "text": "NATIONAL RESEARCH FELLOWSHIP (NRF) 2026 CALL FOR PROPOSALS\nAutonomous Science & Humanities Research Council\nSCHEDULE OF RECRUITMENT:\n- Portal Launch: 01 October 2026\n- Proposal Submission Deadline: 15 November 2026, 17:00 IST\n- Technical Peer Review Results: 20 December 2026\n- Fellowship Tenure Starts: 01 February 2027\nSTIPEND & EMOLUMENTS:\n- Junior Research Fellow (JRF): Rs. 37,000/- per month + HRA as per norms.\n- Annual Contingency Grant: Rs. 60,000/- per annum for research materials.",
+          "char_count": 492,
+          "word_count": 75
+        }
+      ],
+      "is_encrypted": false,
+      "is_scanned": false,
+      "security_warnings": []
+    },
+    "analysis": {
+      "document_id": "doc_b1024f79edc8",
+      "filename": "Research Fellowship PDF.pdf",
+      "purpose": "Official selection, circular, or examination announcement from Research Fellowship PDF.pdf.",
+      "summary": "Processed 1 pages with 75 words. Identified 2 dates, 0 eligibility benchmarks, and 0 required document specifications.",
+      "application_fee": "- Junior Research Fellow (JRF): Rs. 37,000/- per month + HRA as per norms.",
+      "uncertainties": [
+        "No conflicting clauses or unverified provisions detected in source."
+      ],
+      "dates": [
+        {
+          "title": "SCHEDULE OF RECRUITMENT:",
+          "date_str": "SCHEDULE OF RECRUITMENT:",
+          "is_deadline": false,
+          "source_page": 1,
+          "context": "SCHEDULE OF RECRUITMENT:"
+        },
+        {
+          "title": "- Proposal Submission Deadline: 15 November 2026, 17:00 IST",
+          "date_str": "- Proposal Submission Deadline: 15 November 2026, 17:00 IST",
+          "is_deadline": true,
+          "source_page": 1,
+          "context": "- Proposal Submission Deadline: 15 November 2026, 17:00 IST"
+        }
+      ],
+      "eligibility": [],
+      "documents": [],
+      "actions": [
+        {
+          "step_number": 1,
+          "title": "- Portal Launch: 01 October 2026",
+          "description": "- Portal Launch: 01 October 2026",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 2,
+          "title": "- Proposal Submission Deadline: 15 November 2026, ",
+          "description": "- Proposal Submission Deadline: 15 November 2026, 17:00 IST",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 3,
+          "title": "- Technical Peer Review Results: 20 December 2026",
+          "description": "- Technical Peer Review Results: 20 December 2026",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 4,
+          "title": "- Fellowship Tenure Starts: 01 February 2027",
+          "description": "- Fellowship Tenure Starts: 01 February 2027",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 5,
+          "title": "- Junior Research Fellow (JRF): Rs. 37,000/- per m",
+          "description": "- Junior Research Fellow (JRF): Rs. 37,000/- per month + HRA as per norms.",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        },
+        {
+          "step_number": 6,
+          "title": "- Annual Contingency Grant: Rs. 60,000/- per annum",
+          "description": "- Annual Contingency Grant: Rs. 60,000/- per annum for research materials.",
+          "deadline": null,
+          "source_page": 1,
+          "completed": false
+        }
+      ],
+      "language": "en",
+      "ai_engine": "local-deterministic-extractor",
+      "generated_at": "2026-10-21"
+    }
+  }
+}

@@ -8,5 +8,6 @@ class Settings(BaseModel):
     ollama_model: str = os.getenv("NOTICENAP_OLLAMA_MODEL", "gemma2")
     max_upload_size_bytes: int = 50 * 1024 * 1024  # 50 MB
     allowed_mime_types: list[str] = ["application/pdf"]
+    cors_origins: str = os.getenv("NOTICENAP_CORS_ORIGINS", "")
 
 settings = Settings()

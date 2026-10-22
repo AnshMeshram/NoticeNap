@@ -140,3 +140,14 @@ def test_extract_and_analyze_flow_and_calendar():
     # 7. Delete Document
     del_resp = client.delete(f"/api/documents/{doc_id}")
     assert del_resp.status_code == 200
+
+def test_cors_vercel_headers():
+    response = client.options(
+        "/api/health",
+        headers={
+            "Origin": "https://noticenap.vercel.app",
+            "Access-Control-Request-Method": "GET",
+        }
+    )
+    assert response.headers.get("access-control-allow-origin") == "https://noticenap.vercel.app"
+
