@@ -137,34 +137,40 @@ def heuristic_extract_facets(doc: DocumentExtractionResult, language: str = "en"
     unique_eligibility = {e.requirement: e for e in eligibility}.values()
     unique_docs = {d.specification: d for d in documents}.values()
 
-    # Language localization for summaries
+    # Language localization for summaries and fallbacks
     if language == "hi":
         purpose = f"{doc.filename} का आधिकारिक विवरण और पात्रता सूचना।"
         summary = f"{doc.page_count} पृष्ठों का विश्लेषण पूर्ण। {len(unique_dates)} महत्वपूर्ण तिथियां, {len(unique_eligibility)} पात्रता मानदंड, और {len(unique_docs)} आवश्यक दस्तावेज मिले।"
+        default_fee = "किसी विशिष्ट आवेदन शुल्क का उल्लेख नहीं है।"
+        default_unc = ["स्रोत में कोई विरोधाभासी खंड या असत्यापित प्रावधान नहीं मिले।"]
     elif language == "mr":
         purpose = f"{doc.filename} ची अधिकृत माहिती आणि पात्रता सूचना."
         summary = f"{doc.page_count} पृष्ठांचे विश्लेषण पूर्ण. {len(unique_dates)} महत्त्वाच्या तारखा, {len(unique_eligibility)} पात्रता निकष आणि {len(unique_docs)} आवश्यक कागदपत्रे आढळली."
+        default_fee = "कोणत्याही विशिष्ट अर्ज शुल्काचा उल्लेख नाही."
+        default_unc = ["मूळ सूचनेमध्ये कोणतेही परस्परविरोधी कलम किंवा असत्यापित तरतुदी आढळल्या नाहीत."]
     else:
         purpose = f"Official selection, circular, or examination announcement from {doc.filename}."
         summary = f"Processed {doc.page_count} pages with {doc.total_words} words. Identified {len(unique_dates)} dates, {len(unique_eligibility)} eligibility benchmarks, and {len(unique_docs)} required document specifications."
+        default_fee = "No specific application fee mentioned."
+        default_unc = ["No conflicting clauses or unverified provisions detected in source."]
 
     default_actions = [
         ActionStep(
             step_number=1,
-            title="Review Eligibility Benchmarks" if language == "en" else ("पात्रता निकषांचे पुनरावलोकन" if language == "mr" else "पात्रता मानदंडों की समीक्षा करें"),
-            description="Cross-reference qualifications and age caps against Page 1 specifications.",
+            title="पात्रता मानदंडों की समीक्षा करें" if language == "hi" else ("पात्रता निकषांचे पुनरावलोकन करा" if language == "mr" else "Review Eligibility Benchmarks"),
+            description="अधिसूचना के अनुसार आयु सीमा और शैक्षणिक योग्यता की पुष्टि करें।" if language == "hi" else ("अधिसूचनेनुसार वयोमर्यादा व शैक्षणिक पात्रतेची खात्री करा." if language == "mr" else "Cross-reference qualifications and age caps against Page 1 specifications."),
             source_page=1
         ),
         ActionStep(
             step_number=2,
-            title="Assemble Required Documents" if language == "en" else ("आवश्यक कागदपत्रे गोळा करा" if language == "mr" else "आवश्यक दस्तावेज एकत्र करें"),
-            description="Verify PDF file sizes and format restrictions before starting upload.",
+            title="आवश्यक दस्तावेज एकत्र करें" if language == "hi" else ("आवश्यक कागदपत्रे गोळा करा" if language == "mr" else "Assemble Required Documents"),
+            description="अपलोड से पूर्व सभी प्रमाण पत्रों और फोटो का आकार निर्धारित सीमा में जांचें।" if language == "hi" else ("अपलोड करण्यापूर्वी कागदपत्रे विहित आकारात तपासा." if language == "mr" else "Verify PDF file sizes and format restrictions before starting upload."),
             source_page=min(2, doc.page_count)
         ),
         ActionStep(
             step_number=3,
-            title="Submit Online Application" if language == "en" else ("ऑनलाइन अर्ज सादर करा" if language == "mr" else "ऑनलाइन आवेदन जमा करें"),
-            description="Complete portal application prior to specified closing deadline.",
+            title="ऑनलाइन आवेदन जमा करें" if language == "hi" else ("ऑनलाइन अर्ज सादर करा" if language == "mr" else "Submit Online Application"),
+            description="अंतिम समय सीमा से पहले आधिकारिक पोर्टल पर आवेदन फॉर्म सबमिट करें।" if language == "hi" else ("अंतिम मुदतीपूर्वी अधिकृत पोर्टलवर अर्ज सादर करा." if language == "mr" else "Complete portal application prior to specified closing deadline."),
             source_page=1
         )
     ]
@@ -174,12 +180,12 @@ def heuristic_extract_facets(doc: DocumentExtractionResult, language: str = "en"
         filename=doc.filename,
         purpose=purpose,
         summary=summary,
-        application_fee=app_fee or "No specific application fee mentioned.",
-        uncertainties=uncertainties[:4] or ["No conflicting clauses or unverified provisions detected in source."],
+        application_fee=app_fee or default_fee,
+        uncertainties=uncertainties[:4] or default_unc,
         dates=list(unique_dates)[:8],
         eligibility=list(unique_eligibility)[:8],
         documents=list(unique_docs)[:10],
-        actions=actions[:8] or default_actions,
+        actions=default_actions if language in ["hi", "mr"] else (actions[:8] or default_actions),
         language=language,
         ai_engine="local-deterministic-extractor",
         generated_at="2026-10-21"
